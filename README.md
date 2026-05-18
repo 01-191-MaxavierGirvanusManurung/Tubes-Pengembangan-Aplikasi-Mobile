@@ -65,3 +65,74 @@ Fitur **Smart Reminder** menggunakan groq AI untuk menentukan waktu pengingat ya
 AI menganalisis riwayat penyelesaian tugas mahasiswa — apakah cenderung mengerjakan jauh-jauh hari atau mendekati deadline — lalu mempertimbangkan kompleksitas tugas untuk menghasilkan jadwal reminder yang paling efektif bagi masing-masing pengguna. Dengan cara ini, reminder yang diterima terasa lebih relevan dan tepat waktu.
 
 ---
+## 📁 Struktur Proyek
+```
+composeApp/src/commonMain/kotlin/com/studyhub/
+├── core/ 
+│   ├── di/                         # Koin DI setup
+│   │   ├── KoinSetup.kt            # initKoin() — JANGAN diubah
+│   │   └── AppModule.kt            # Koin module bindings
+│   ├── network/
+│   │   ├── ApiConfig.kt            # expect/actual Groq API key
+│   │   └── HttpClientFactory.kt    # Ktor HTTP client factory
+│   └── util/                       # Helper & extension functions
+├── data/
+│   ├── local/                      # SQLDelight data sources (Sprint 2)
+│   ├── remote/                     # Firebase & API sources (Sprint 2)
+│   └── repository/                 # Repository implementations (Sprint 2)
+├── domain/
+│   ├── model/                      ← SEDANG DIKERJAKAN
+│   │   ├── Task.kt                 # Task entity + Priority + TaskStatus + SortBy
+│   │   ├── User.kt                 # User entity
+│   │   ├── Subject.kt              # Subject entity
+│   │   └── UserPreferences.kt      # User settings model
+│   ├── repository/                 # Repository interfaces (Sprint 2)
+│   └── usecase/                    # Use cases (Sprint 2)
+└── presentation/
+├── navigation/                 # Screen routes + NavHost
+├── screens/                    # UI screens per fitur
+├── components/                 # Reusable composables
+└── theme/                      # Material3 design system
+
+---
+
+## 🚧 Sprint Progress
+
+| Sprint | Status | Keterangan |
+|--------|--------|------------|
+| Sprint 1 | ✅ 100% | Foundation, Clean Architecture, DI, CI |
+| Sprint 2 | 🔄 In Progress | Domain models selesai, lanjut use cases |
+| Sprint 3 | 🔄 25% | Network layer (Groq API) sudah disiapkan |
+| Sprint 4 | ❌ Belum | Polish, tests, coverage |
+```
+---
+
+## 🗂️ Domain Models
+
+### Task
+Representasi tugas mahasiswa di domain layer.
+
+| Field | Tipe | Keterangan |
+|-------|------|------------|
+| id | String | UUID unik |
+| userId | String | ID pemilik tugas |
+| title | String | Judul tugas |
+| description | String | Deskripsi tugas |
+| subject | String | Nama mata kuliah |
+| priority | Priority | HIGH / MEDIUM / LOW |
+| status | TaskStatus | TODO / IN_PROGRESS / DONE |
+| dueDate | Long | Deadline dalam epoch millis |
+| dueTime | String? | Waktu deadline format HH:mm |
+| tags | List<String> | Label tambahan |
+| estimatedMinutes | Int | Estimasi waktu pengerjaan |
+| isDeleted | Boolean | Soft delete flag |
+| completedAt | Long? | Waktu selesai epoch millis |
+| createdAt | Long | Waktu dibuat epoch millis |
+| updatedAt | Long | Waktu diubah epoch millis |
+
+**Enums:**
+- `Priority` → HIGH, MEDIUM, LOW
+- `TaskStatus` → TODO, IN_PROGRESS, DONE
+- `SortBy` → DUE_DATE, PRIORITY, SUBJECT, TITLE
+
+---

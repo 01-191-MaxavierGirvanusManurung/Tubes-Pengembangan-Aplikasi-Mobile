@@ -70,13 +70,13 @@ class NoteRepositoryImpl(private val database: StudyHubDatabase) : NoteRepositor
     
     override suspend fun updateNote(note: Note) = withContext(Dispatchers.IO) {
         queries.updateNote(
-            id = note.id,
             title = note.title,
             content = note.content,
             category = note.category.name,
             color = note.color.name,
             is_pinned = if (note.isPinned) 1L else 0L,
-            updated_at = Clock.System.now().toEpochMilliseconds()
+            updated_at = Clock.System.now().toEpochMilliseconds(),
+            id = note.id
         )
     }
     
@@ -97,14 +97,14 @@ class NoteRepositoryImpl(private val database: StudyHubDatabase) : NoteRepositor
 
     private fun com.studyhub.data.local.NoteEntity.toDomain(): Note {
         return Note(
-            id = id,
-            title = title,
-            content = content,
-            category = NoteCategory.fromString(category),
-            color = NoteColor.fromString(color),
-            isPinned = is_pinned == 1L,
-            createdAt = Instant.fromEpochMilliseconds(created_at),
-            updatedAt = Instant.fromEpochMilliseconds(updated_at)
+            id = this.id,
+            title = this.title,
+            content = this.content,
+            category = NoteCategory.fromString(this.category),
+            color = NoteColor.fromString(this.color),
+            isPinned = this.is_pinned == 1L,
+            createdAt = Instant.fromEpochMilliseconds(this.created_at),
+            updatedAt = Instant.fromEpochMilliseconds(this.updated_at)
         )
     }
 }

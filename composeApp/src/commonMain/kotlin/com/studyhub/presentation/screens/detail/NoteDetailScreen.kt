@@ -51,6 +51,7 @@ fun NoteDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (Long) -> Unit,
     onShare: (String) -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: NoteDetailViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +82,7 @@ fun NoteDetailScreen(
     }
     
     Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(

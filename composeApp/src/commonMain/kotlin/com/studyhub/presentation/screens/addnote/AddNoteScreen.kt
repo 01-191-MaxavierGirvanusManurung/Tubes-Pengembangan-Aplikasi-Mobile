@@ -44,6 +44,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun AddNoteScreen(
     noteId: Long?,
     onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: AddNoteViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -63,6 +64,7 @@ fun AddNoteScreen(
     }
     
     Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(

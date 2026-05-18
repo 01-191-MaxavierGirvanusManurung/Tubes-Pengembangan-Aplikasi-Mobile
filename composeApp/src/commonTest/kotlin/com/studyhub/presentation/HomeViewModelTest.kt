@@ -26,15 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/**
- * Unit Tests untuk HomeViewModel
- * 
- * Testing Guidelines:
- * 1. Setup test dispatcher untuk control coroutines
- * 2. Gunakan Turbine untuk test StateFlow
- * 3. Test UI state transformations
- * 4. Test user actions
- */
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     

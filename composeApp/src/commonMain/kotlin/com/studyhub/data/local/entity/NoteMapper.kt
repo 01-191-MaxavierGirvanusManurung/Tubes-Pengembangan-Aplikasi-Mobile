@@ -8,14 +8,14 @@ import kotlinx.datetime.Instant
 
 fun NoteEntity.toDomain(): Note {
     return Note(
-        id = id,
-        title = title,
-        content = content,
-        category = NoteCategory.fromString(category),
-        color = NoteColor.fromString(color),
-        isPinned = is_pinned == 1L,
-        createdAt = Instant.fromEpochMilliseconds(created_at),
-        updatedAt = Instant.fromEpochMilliseconds(updated_at)
+        id = this.id,
+        title = this.title,
+        content = this.content,
+        category = NoteCategory.fromString(this.category),
+        color = NoteColor.fromString(this.color),
+        isPinned = this.is_pinned == 1L,
+        createdAt = Instant.fromEpochMilliseconds(this.created_at),
+        updatedAt = Instant.fromEpochMilliseconds(this.updated_at)
     )
 }
 

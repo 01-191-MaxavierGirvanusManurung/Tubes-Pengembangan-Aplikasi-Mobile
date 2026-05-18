@@ -6,13 +6,12 @@ import com.studyhub.data.local.StudyHubDatabase
 import com.studyhub.data.local.datastore.DataStoreFactory
 import com.studyhub.data.local.datastore.UserPreferences
 import com.studyhub.data.local.datastore.create
-import com.studyhub.data.remote.api.GroqService
-import com.studyhub.data.repository.TaskRepositoryImpl
-import com.studyhub.domain.repository.TaskRepository
+import com.studyhub.data.repository.NoteRepositoryImpl
+import com.studyhub.domain.repository.NoteRepository
+import com.studyhub.domain.usecase.*
+import com.studyhub.presentation.screens.addnote.AddNoteViewModel
+import com.studyhub.presentation.screens.detail.NoteDetailViewModel
 import com.studyhub.presentation.screens.home.HomeViewModel
-import com.studyhub.presentation.screens.task_detail.TaskDetailViewModel
-import com.studyhub.presentation.screens.add_task.AddTaskViewModel
-import com.studyhub.presentation.screens.profile.ProfileViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
@@ -25,7 +24,6 @@ import org.koin.dsl.module
 
 val networkModule = module {
     single { createHttpClient() }
-    singleOf(::GroqService)
 }
 
 // ==================== DATABASE MODULE ====================
@@ -47,16 +45,24 @@ val preferencesModule = module {
 // ==================== REPOSITORY MODULE ====================
 
 val repositoryModule = module {
-    singleOf(::TaskRepositoryImpl) bind TaskRepository::class
+    singleOf(::NoteRepositoryImpl) bind NoteRepository::class
+}
+
+// ==================== USE CASE MODULE ====================
+
+val useCaseModule = module {
+    singleOf(::GetAllNotesUseCase)
+    singleOf(::SearchNotesUseCase)
+    singleOf(::SaveNoteUseCase)
+    singleOf(::DeleteNoteUseCase)
 }
 
 // ==================== VIEWMODEL MODULE ====================
 
 val viewModelModule = module {
     viewModelOf(::HomeViewModel)
-    viewModelOf(::AddTaskViewModel)
-    viewModelOf(::TaskDetailViewModel)
-    viewModelOf(::ProfileViewModel)
+    viewModelOf(::AddNoteViewModel)
+    viewModelOf(::NoteDetailViewModel)
 }
 
 // ==================== SHARED MODULES ====================
@@ -66,6 +72,7 @@ val sharedModules = listOf(
     databaseModule,
     preferencesModule,
     repositoryModule,
+    useCaseModule,
     viewModelModule
 )
 

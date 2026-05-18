@@ -23,19 +23,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileScreen(
+    modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .background(AppWhite)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
         // Header
@@ -51,11 +51,11 @@ fun ProfileScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(AppGray)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text("Welcome back", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    Text("Welcome back", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("StudyHub", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
             }
@@ -73,7 +73,7 @@ fun ProfileScreen(
         Text(
             text = "Track your study habits and productivity trends for August.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
 
@@ -82,63 +82,55 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            Box(
-                modifier = Modifier
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color(0xFFF8F9FF), Color(0xFFEDF1FF))
-                        )
-                    )
-                    .padding(24.dp)
-            ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(AppBlack),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Psychology, contentDescription = null, tint = Color.White)
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("AI Study Insight", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    if (uiState.isInsightLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
-                            color = AppBlack
-                        )
-                    } else {
-                        Text(
-                            text = uiState.aiInsight,
-                            style = MaterialTheme.typography.bodyMedium,
-                            lineHeight = 20.sp
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { viewModel.generateAiInsight() },
-                        enabled = !uiState.isInsightLoading,
-                        colors = ButtonDefaults.buttonColors(containerColor = AppWhite),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+            Column(modifier = Modifier.padding(24.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (uiState.aiInsight.startsWith("Klik")) "Dapatkan Insight" else "Refresh Insight",
-                            color = AppBlack,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Icon(Icons.Default.Psychology, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("AI Study Insight", style = MaterialTheme.typography.titleMedium)
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                if (uiState.isInsightLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).align(Alignment.CenterHorizontally),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        text = uiState.aiInsight,
+                        style = MaterialTheme.typography.bodyMedium,
+                        lineHeight = 20.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { viewModel.generateAiInsight() },
+                    enabled = !uiState.isInsightLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Text(
+                        text = if (uiState.aiInsight.startsWith("Klik")) "Dapatkan Insight" else "Refresh Insight",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -155,8 +147,8 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = AppGray.copy(alpha = 0.5f))
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(
@@ -164,20 +156,20 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    TrendBar(0.4f, PastelOrange)
-                    TrendBar(0.7f, PastelGreen)
-                    TrendBar(1.0f, PastelPurple)
-                    TrendBar(0.6f, PastelBlue)
+                    TrendBar(0.4f, MaterialTheme.colorScheme.primary)
+                    TrendBar(0.7f, MaterialTheme.colorScheme.secondary)
+                    TrendBar(1.0f, MaterialTheme.colorScheme.tertiary)
+                    TrendBar(0.6f, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text("W1", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text("W2", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text("W3", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    Text("W4", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text("W1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("W2", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("W3", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("W4", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -192,13 +184,13 @@ fun ProfileScreen(
             StatCard(
                 title = "Total Study Time",
                 value = "86h",
-                color = PastelOrange,
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
                 title = "Tasks Completed",
                 value = uiState.completedTasks.toString(),
-                color = PastelGreen,
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -215,8 +207,8 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(AppGray.copy(alpha = 0.3f))
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                 .padding(16.dp)
         ) {
             Column {
@@ -225,7 +217,7 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                        Text(day, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -242,9 +234,9 @@ fun ProfileScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(MaterialTheme.shapes.small)
                                         .background(
-                                            if (isActive) PastelGreen else AppWhite
+                                            if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
                                         )
                                 )
                             }
@@ -257,6 +249,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(100.dp))
     }
 }
+
 
 @Composable
 fun TrendBar(progress: Float, color: Color) {
