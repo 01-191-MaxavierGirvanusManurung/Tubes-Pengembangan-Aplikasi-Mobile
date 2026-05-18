@@ -69,30 +69,30 @@ AI menganalisis riwayat penyelesaian tugas mahasiswa — apakah cenderung menger
 ```
 composeApp/src/commonMain/kotlin/com/studyhub/
 ├── core/ 
-│   ├── di/                         # Koin DI setup
-│   │   ├── KoinSetup.kt            # initKoin() — JANGAN diubah
-│   │   └── AppModule.kt            # Koin module bindings
+│   ├── di/                        
+│   │   ├── KoinSetup.kt            
+│   │   └── AppModule.kt            
 │   ├── network/
-│   │   ├── ApiConfig.kt            # expect/actual Groq API key
-│   │   └── HttpClientFactory.kt    # Ktor HTTP client factory
-│   └── util/                       # Helper & extension functions
+│   │   ├── ApiConfig.kt            
+│   │   └── HttpClientFactory.kt    
+│   └── util/                       
 ├── data/
-│   ├── local/                      # SQLDelight data sources (Sprint 2)
-│   ├── remote/                     # Firebase & API sources (Sprint 2)
-│   └── repository/                 # Repository implementations (Sprint 2)
+│   ├── local/                      
+│   ├── remote/                     
+│   └── repository/                 
 ├── domain/
-│   ├── model/                      ← SEDANG DIKERJAKAN
-│   │   ├── Task.kt                 # Task entity + Priority + TaskStatus + SortBy
-│   │   ├── User.kt                 # User entity
-│   │   ├── Subject.kt              # Subject entity
-│   │   └── UserPreferences.kt      # User settings model
-│   ├── repository/                 # Repository interfaces (Sprint 2)
-│   └── usecase/                    # Use cases (Sprint 2)
+│   ├── model/                      
+│   │   ├── Task.kt                
+│   │   ├── User.kt                 
+│   │   ├── Subject.kt              
+│   │   └── UserPreferences.kt      
+│   ├── repository/                
+│   └── usecase/                    
 └── presentation/
-├── navigation/                 # Screen routes + NavHost
-├── screens/                    # UI screens per fitur
-├── components/                 # Reusable composables
-└── theme/                      # Material3 design system
+├── navigation/                
+├── screens/                   
+├── components/            
+└── theme/                     
 
 ---
 
