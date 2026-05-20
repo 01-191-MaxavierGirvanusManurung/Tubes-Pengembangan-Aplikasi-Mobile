@@ -83,6 +83,10 @@ kotlin {
             // Coil
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            
+            // Firebase
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.common)
         }
         
         commonTest.dependencies {
@@ -149,7 +153,7 @@ android {
 sqldelight {
     databases {
         create("StudyHubDatabase") {
-            packageName.set("com.studyhub.data.local")
+            packageName.set("com.studyhub.database")
         }
     }
 }

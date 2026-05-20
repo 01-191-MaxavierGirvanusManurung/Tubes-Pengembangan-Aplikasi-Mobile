@@ -1,4 +1,4 @@
-package com.studyhub.presentation.screens.home
+package com.studyhub.presentation.screens.task
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun TaskDetailScreen(taskId: String, navController: NavController) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Home Screen — coming soon")
+        Text("Task Detail Screen — coming soon")
     }
 }

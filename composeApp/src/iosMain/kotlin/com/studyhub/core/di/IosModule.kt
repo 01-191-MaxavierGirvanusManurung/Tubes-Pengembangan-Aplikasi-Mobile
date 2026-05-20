@@ -1,6 +1,6 @@
 package com.studyhub.core.di
 
-import com.studyhub.core.util.DatabaseDriverFactory
+import com.studyhub.data.local.DatabaseDriverFactory
 import com.studyhub.data.local.datastore.DataStoreFactory
 import org.koin.dsl.module
 
