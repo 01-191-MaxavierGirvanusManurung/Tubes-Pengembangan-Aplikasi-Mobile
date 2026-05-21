@@ -20,6 +20,8 @@ import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
 import com.studyhub.presentation.screens.add_task.AddTaskViewModel
 import com.studyhub.presentation.screens.home.HomeViewModel
+import com.studyhub.presentation.screens.auth.AuthViewModel
+import com.studyhub.presentation.screens.task.TasksViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -90,6 +92,8 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModelOf(::AddTaskViewModel)
     viewModelOf(::HomeViewModel)
+    viewModelOf(::AuthViewModel)
+    viewModelOf(::TasksViewModel)
 }
 
 // ==================== SHARED MODULES ====================

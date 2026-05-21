@@ -1,16 +1,164 @@
 package com.studyhub.presentation.screens.auth
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.presentation.navigation.Screen
+import com.studyhub.presentation.theme.Spacing
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun RegisterScreen(navController: NavController) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Register Screen — coming soon")
+    val viewModel: AuthViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    
+    val passwordsMatch = password == confirmPassword && password.isNotBlank()
+
+    LaunchedEffect(uiState.user) {
+        if (uiState.user != null) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = Spacing.large),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("StudyHub", style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary)
+        Text("Daftar akun baru",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(Spacing.extraLarge))
+        
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Nama Lengkap") },
+            leadingIcon = { Icon(Icons.Default.Person, null) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        )
+        Spacer(Modifier.height(Spacing.normal))
+        
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            leadingIcon = { Icon(Icons.Default.Email, null) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        )
+        Spacer(Modifier.height(Spacing.normal))
+        
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
+            trailingIcon = {
+                IconButton({ passwordVisible = !passwordVisible }) {
+                    Icon(
+                        if (passwordVisible) Icons.Default.VisibilityOff
+                        else Icons.Default.Visibility, null
+                    )
+                }
+            },
+            visualTransformation = if (passwordVisible)
+                VisualTransformation.None else PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        )
+        Spacer(Modifier.height(Spacing.normal))
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Konfirmasi Password") },
+            leadingIcon = { Icon(Icons.Default.Lock, null) },
+            visualTransformation = if (passwordVisible)
+                VisualTransformation.None else PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            isError = confirmPassword.isNotBlank() && !passwordsMatch
+        )
+        
+        if (confirmPassword.isNotBlank() && !passwordsMatch) {
+            Text(
+                "Password tidak cocok",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = Spacing.small, top = 4.dp)
+            )
+        }
+
+        Spacer(Modifier.height(Spacing.normal))
+        
+        AnimatedVisibility(visible = uiState.error != null) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    uiState.error ?: "",
+                    modifier = Modifier.padding(Spacing.small),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(Spacing.large))
+        
+        Button(
+            onClick = { viewModel.register(email, password, name) },
+            enabled = !uiState.isLoading && name.isNotBlank() && email.isNotBlank() && passwordsMatch,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            if (uiState.isLoading)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            else Text("Daftar", style = MaterialTheme.typography.labelLarge)
+        }
+        
+        Spacer(Modifier.height(Spacing.small))
+        
+        TextButton(
+            onClick = { navController.navigate(Screen.Login.route) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Sudah punya akun? Masuk")
+        }
     }
 }
