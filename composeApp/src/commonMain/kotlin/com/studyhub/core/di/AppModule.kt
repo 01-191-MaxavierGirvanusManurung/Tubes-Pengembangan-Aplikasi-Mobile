@@ -5,28 +5,24 @@ import com.studyhub.data.local.DatabaseDriverFactory
 import com.studyhub.database.StudyHubDatabase
 import com.studyhub.data.local.LocalSubjectDataSource
 import com.studyhub.data.local.LocalTaskDataSource
-import com.studyhub.data.remote.FirebaseAuthSource
 import com.studyhub.data.local.datastore.DataStoreFactory
 import com.studyhub.data.local.datastore.UserPreferences
 import com.studyhub.data.local.datastore.create
-import com.studyhub.data.repository.AuthRepositoryImpl
 import com.studyhub.data.repository.SubjectRepositoryImpl
 import com.studyhub.data.repository.TaskRepositoryImpl
-import com.studyhub.domain.repository.AuthRepository
 import com.studyhub.domain.repository.SubjectRepository
 import com.studyhub.domain.repository.TaskRepository
-import com.studyhub.domain.usecase.auth.*
 import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
 import com.studyhub.presentation.screens.add_task.AddTaskViewModel
 import com.studyhub.presentation.screens.home.HomeViewModel
-import com.studyhub.presentation.screens.auth.AuthViewModel
 import com.studyhub.presentation.screens.task.TasksViewModel
+import com.studyhub.presentation.screens.task.AddEditTaskViewModel
+import com.studyhub.presentation.screens.calendar.CalendarViewModel
+import com.studyhub.presentation.screens.profile.ProfileViewModel
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
-import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.core.context.startKoin
 
@@ -39,17 +35,9 @@ val networkModule = module {
 // ==================== DATABASE MODULE ====================
 
 val databaseModule = module {
-    // These bindings are added as per Sprint 2 instructions
-    // Note: DatabaseDriverFactory is handled via platform modules to provide Context on Android
     single { StudyHubDatabase(get<DatabaseDriverFactory>().createDriver()) }
     single { LocalTaskDataSource(get()) }
     single { LocalSubjectDataSource(get()) }
-}
-
-// ==================== REMOTE MODULE ====================
-
-val remoteModule = module {
-    single { FirebaseAuthSource() }
 }
 
 // ==================== PREFERENCES MODULE ====================
@@ -62,7 +50,6 @@ val preferencesModule = module {
 // ==================== REPOSITORY MODULE ====================
 
 val repositoryModule = module {
-    single<AuthRepository> { AuthRepositoryImpl(get()) }
     single<TaskRepository> { TaskRepositoryImpl(get()) }
     single<SubjectRepository> { SubjectRepositoryImpl(get()) }
 }
@@ -70,10 +57,6 @@ val repositoryModule = module {
 // ==================== USE CASE MODULE ====================
 
 val useCaseModule = module {
-    factory { LoginUseCase(get()) }
-    factory { RegisterUseCase(get()) }
-    factory { LogoutUseCase(get()) }
-    factory { GetCurrentUserUseCase(get()) }
     factory { AddTaskUseCase(get()) }
     factory { GetAllTasksUseCase(get()) }
     factory { GetActiveTasksUseCase(get()) }
@@ -92,8 +75,10 @@ val useCaseModule = module {
 val viewModelModule = module {
     viewModelOf(::AddTaskViewModel)
     viewModelOf(::HomeViewModel)
-    viewModelOf(::AuthViewModel)
     viewModelOf(::TasksViewModel)
+    viewModelOf(::AddEditTaskViewModel)
+    viewModelOf(::CalendarViewModel)
+    viewModelOf(::ProfileViewModel)
 }
 
 // ==================== SHARED MODULES ====================
@@ -101,7 +86,6 @@ val viewModelModule = module {
 val sharedModules = listOf(
     networkModule,
     databaseModule,
-    remoteModule,
     preferencesModule,
     repositoryModule,
     useCaseModule,

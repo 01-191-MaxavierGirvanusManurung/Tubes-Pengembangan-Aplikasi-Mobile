@@ -52,7 +52,7 @@ fun HomeScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Halo, ${uiState.userName} 👋",
+                        Text("Halo! 👋",
                             style = MaterialTheme.typography.headlineMedium)
                         Text("Semangat belajar hari ini!",
                             style = MaterialTheme.typography.bodyMedium,

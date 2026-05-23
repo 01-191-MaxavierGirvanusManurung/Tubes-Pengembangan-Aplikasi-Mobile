@@ -1,6 +1,5 @@
 CREATE TABLE TaskEntity (
     id TEXT NOT NULL PRIMARY KEY,
-    userId TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     subject TEXT NOT NULL,
@@ -18,21 +17,21 @@ CREATE TABLE TaskEntity (
 
 insertTask:
 INSERT OR REPLACE INTO TaskEntity
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
-selectAllByUserId:
+selectAllTasks:
 SELECT * FROM TaskEntity
-WHERE userId = ? AND isDeleted = 0
+WHERE isDeleted = 0
 ORDER BY dueDate ASC;
 
-selectActiveByUserId:
+selectActiveTasks:
 SELECT * FROM TaskEntity
-WHERE userId = ? AND isDeleted = 0 AND status != 'done'
+WHERE isDeleted = 0 AND status != 'done'
 ORDER BY dueDate ASC;
 
-selectCompletedByUserId:
+selectCompletedTasks:
 SELECT * FROM TaskEntity
-WHERE userId = ? AND isDeleted = 0 AND status = 'done'
+WHERE isDeleted = 0 AND status = 'done'
 ORDER BY dueDate ASC;
 
 selectById:
@@ -40,19 +39,22 @@ SELECT * FROM TaskEntity WHERE id = ? AND isDeleted = 0;
 
 selectByDate:
 SELECT * FROM TaskEntity
-WHERE userId = ? AND dueDate >= ? AND dueDate < ? AND isDeleted = 0;
+WHERE dueDate >= ? AND dueDate < ?
+AND isDeleted = 0;
 
 selectBySubject:
 SELECT * FROM TaskEntity
-WHERE userId = ? AND subject = ? AND isDeleted = 0;
+WHERE subject = ? AND isDeleted = 0;
 
 selectOverdueCount:
 SELECT COUNT(*) FROM TaskEntity
-WHERE userId = ? AND dueDate < ? AND status != 'done' AND isDeleted = 0;
+WHERE dueDate < ? AND status != 'done'
+AND isDeleted = 0;
 
 selectCompletedCountInRange:
 SELECT COUNT(*) FROM TaskEntity
-WHERE userId = ? AND completedAt >= ? AND completedAt < ? AND isDeleted = 0;
+WHERE completedAt >= ? AND completedAt < ?
+AND isDeleted = 0;
 
 updateTask:
 UPDATE TaskEntity SET

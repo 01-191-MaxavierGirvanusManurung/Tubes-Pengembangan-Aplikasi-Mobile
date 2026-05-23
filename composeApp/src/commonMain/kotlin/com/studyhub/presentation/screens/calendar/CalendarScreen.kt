@@ -1,16 +1,177 @@
 package com.studyhub.presentation.screens.calendar
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.presentation.components.CalendarDayCell
+import com.studyhub.presentation.components.EmptyStateView
+import com.studyhub.presentation.components.TaskCard
+import com.studyhub.presentation.navigation.Screen
+import com.studyhub.presentation.theme.Spacing
+import kotlinx.datetime.*
+import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(navController: NavController) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Calendar Screen — coming soon")
+    val viewModel: CalendarViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var currentMonth by remember { 
+        mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.let { LocalDate(it.year, it.month, 1) }) 
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAllTaskDates()
+        viewModel.selectDate(uiState.selectedDate)
+    }
+
+    val daysInMonth = remember(currentMonth) {
+        val nextMonth = if (currentMonth.monthNumber == 12) LocalDate(currentMonth.year + 1, 1, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
+        val lastDay = nextMonth.toEpochDays() - 1
+        LocalDate.fromEpochDays(lastDay).dayOfMonth
+    }
+
+    val firstDayOfWeek = remember(currentMonth) {
+        currentMonth.dayOfWeek.isoDayNumber % 7 // 0 for Sunday
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Kalender Tugas") }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Month Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.normal, vertical = Spacing.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${currentMonth.month.name} ${currentMonth.year}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Row {
+                    IconButton(onClick = {
+                        currentMonth = if (currentMonth.monthNumber == 1) LocalDate(currentMonth.year - 1, 12, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber - 1, 1)
+                    }) {
+                        Icon(Icons.Default.ChevronLeft, "Bulan sebelumnya")
+                    }
+                    IconButton(onClick = {
+                        currentMonth = if (currentMonth.monthNumber == 12) LocalDate(currentMonth.year + 1, 1, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
+                    }) {
+                        Icon(Icons.Default.ChevronRight, "Bulan berikutnya")
+                    }
+                }
+            }
+
+            // WeekDays Header
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.small)) {
+                listOf("Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab").forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Calendar Grid
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier
+                    .padding(Spacing.small)
+                    .heightIn(max = 300.dp),
+                contentPadding = PaddingValues(Spacing.extraSmall)
+            ) {
+                // Empty cells
+                items(firstDayOfWeek) {
+                    Box(modifier = Modifier.aspectRatio(1f))
+                }
+
+                // Days
+                items(daysInMonth) { day ->
+                    val date = LocalDate(currentMonth.year, currentMonth.month, day + 1)
+                    val epochMillis = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    val isSelected = epochMillis / 86400000L == uiState.selectedDate / 86400000L
+                    val isToday = epochMillis / 86400000L == Clock.System.now().toEpochMilliseconds() / 86400000L
+                    val hasTask = uiState.taskDates.any { it / 86400000L == epochMillis / 86400000L }
+
+                    CalendarDayCell(
+                        dayOfMonth = day + 1,
+                        isSelected = isSelected,
+                        isToday = isToday,
+                        hasTask = hasTask,
+                        onSelect = { viewModel.selectDate(epochMillis) }
+                    )
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.small))
+
+            // Tasks List
+            Text(
+                text = "Tugas pada " + Instant.fromEpochMilliseconds(uiState.selectedDate)
+                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(horizontal = Spacing.normal, vertical = Spacing.small),
+                fontWeight = FontWeight.Bold
+            )
+
+            if (uiState.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.tasksOnSelectedDate.isEmpty()) {
+                EmptyStateView(
+                    message = "Tidak ada tugas untuk tanggal ini",
+                    actionLabel = "Tambah Tugas",
+                    onAction = { navController.navigate(Screen.AddTask.createRoute(uiState.selectedDate.toString())) },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(Spacing.normal),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.small)
+                ) {
+                    items(uiState.tasksOnSelectedDate, key = { it.id }) { task ->
+                        TaskCard(
+                            task = task,
+                            onStatusChange = {},
+                            onEdit = { navController.navigate(Screen.EditTask.createRoute(task.id)) },
+                            onDelete = {}
+                        )
+                    }
+                }
+            }
+        }
     }
 }

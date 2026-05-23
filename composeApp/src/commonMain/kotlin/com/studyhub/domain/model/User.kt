@@ -2,6 +2,7 @@ package com.studyhub.domain.model
 
 data class User(
     val id: String,
-    val email: String,
-    val name: String
+    val displayName: String,
+    val avatarInitials: String,
+    val avatarColorHex: String
 )

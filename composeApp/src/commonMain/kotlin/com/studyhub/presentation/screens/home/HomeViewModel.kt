@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.domain.usecase.auth.GetCurrentUserUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
-    val userName: String = "",
     val todayTasks: List<Task> = emptyList(),
     val upcomingTasks: List<Task> = emptyList(),
     val completedThisWeek: Int = 0,
@@ -25,8 +23,7 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val getActiveTasksUseCase: GetActiveTasksUseCase,
-    private val getTasksByDateUseCase: GetTasksByDateUseCase,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getTasksByDateUseCase: GetTasksByDateUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -36,18 +33,15 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val user = getCurrentUserUseCase()
-                val userId = user?.id ?: return@launch
                 val today = currentMillis()
                 val startOfDay = today - (today % 86_400_000L)
-                val todayTasks = getTasksByDateUseCase(userId, startOfDay)
-                val allActive = getActiveTasksUseCase(userId)
+                val todayTasks = getTasksByDateUseCase(startOfDay)
+                val allActive = getActiveTasksUseCase()
                 val upcoming = allActive.filter { it.dueDate > startOfDay + 86_400_000L }
                     .take(5)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        userName = user.name,
                         todayTasks = todayTasks,
                         upcomingTasks = upcoming,
                         overdueCount = allActive.count {

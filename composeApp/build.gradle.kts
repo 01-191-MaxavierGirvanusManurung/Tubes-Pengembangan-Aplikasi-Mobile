@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.sqldelight)
-    // alias(libs.plugins.google.services) // Disabled until google-services.json is provided
 }
 
 // Load local.properties for API keys
@@ -84,10 +83,6 @@ kotlin {
             // Coil
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
-            
-            // Firebase
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.common)
         }
         
         commonTest.dependencies {

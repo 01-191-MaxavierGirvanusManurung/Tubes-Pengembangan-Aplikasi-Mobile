@@ -6,7 +6,6 @@ import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.SortBy
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.domain.usecase.auth.GetCurrentUserUseCase
 import com.studyhub.domain.usecase.task.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +30,7 @@ class TasksViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
     private val updateTaskStatusUseCase: UpdateTaskStatusUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val filterSortUseCase: FilterAndSortTasksUseCase,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val filterSortUseCase: FilterAndSortTasksUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TasksUiState())
@@ -42,8 +40,7 @@ class TasksViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val user = getCurrentUserUseCase()
-                val tasks = getAllTasksUseCase(user?.id ?: "")
+                val tasks = getAllTasksUseCase()
                 _uiState.update { it.copy(isLoading = false, allTasks = tasks) }
                 applyFilter()
             } catch (e: Exception) {

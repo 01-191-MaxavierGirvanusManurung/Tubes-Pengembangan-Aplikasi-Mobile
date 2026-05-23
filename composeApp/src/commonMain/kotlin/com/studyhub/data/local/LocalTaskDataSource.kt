@@ -11,7 +11,6 @@ class LocalTaskDataSource(private val database: StudyHubDatabase) {
     fun insertTask(task: Task) {
         database.taskEntityQueries.insertTask(
             id = task.id,
-            userId = task.userId,
             title = task.title,
             description = task.description,
             subject = task.subject,
@@ -28,36 +27,36 @@ class LocalTaskDataSource(private val database: StudyHubDatabase) {
         )
     }
 
-    fun selectAllByUserId(userId: String): List<Task> =
-        database.taskEntityQueries.selectAllByUserId(userId)
+    fun selectAllTasks(): List<Task> =
+        database.taskEntityQueries.selectAllTasks()
             .executeAsList().map { it.toTask() }
 
-    fun selectActiveByUserId(userId: String): List<Task> =
-        database.taskEntityQueries.selectActiveByUserId(userId)
+    fun selectActiveTasks(): List<Task> =
+        database.taskEntityQueries.selectActiveTasks()
             .executeAsList().map { it.toTask() }
 
-    fun selectCompletedByUserId(userId: String): List<Task> =
-        database.taskEntityQueries.selectCompletedByUserId(userId)
+    fun selectCompletedTasks(): List<Task> =
+        database.taskEntityQueries.selectCompletedTasks()
             .executeAsList().map { it.toTask() }
 
     fun selectById(taskId: String): Task? =
         database.taskEntityQueries.selectById(taskId)
             .executeAsOneOrNull()?.toTask()
 
-    fun selectByDate(userId: String, start: Long, end: Long): List<Task> =
-        database.taskEntityQueries.selectByDate(userId, start, end)
+    fun selectByDate(start: Long, end: Long): List<Task> =
+        database.taskEntityQueries.selectByDate(start, end)
             .executeAsList().map { it.toTask() }
 
-    fun selectBySubject(userId: String, subject: String): List<Task> =
-        database.taskEntityQueries.selectBySubject(userId, subject)
+    fun selectBySubject(subject: String): List<Task> =
+        database.taskEntityQueries.selectBySubject(subject)
             .executeAsList().map { it.toTask() }
 
-    fun selectOverdueCount(userId: String, now: Long): Long =
-        database.taskEntityQueries.selectOverdueCount(userId, now)
+    fun selectOverdueCount(now: Long): Long =
+        database.taskEntityQueries.selectOverdueCount(now)
             .executeAsOne()
 
-    fun selectCompletedCountInRange(userId: String, start: Long, end: Long): Long =
-        database.taskEntityQueries.selectCompletedCountInRange(userId, start, end)
+    fun selectCompletedCountInRange(start: Long, end: Long): Long =
+        database.taskEntityQueries.selectCompletedCountInRange(start, end)
             .executeAsOne()
 
     fun updateTask(task: Task) {
@@ -86,7 +85,6 @@ class LocalTaskDataSource(private val database: StudyHubDatabase) {
 
     private fun TaskEntity.toTask(): Task = Task(
         id = id,
-        userId = userId,
         title = title,
         description = description,
         subject = subject,

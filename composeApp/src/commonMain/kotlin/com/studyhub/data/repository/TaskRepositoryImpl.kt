@@ -10,17 +10,17 @@ class TaskRepositoryImpl(
 ) : TaskRepository {
     override suspend fun addTask(task: Task) = localDataSource.insertTask(task)
     override suspend fun getTaskById(taskId: String) = localDataSource.selectById(taskId)
-    override suspend fun getAllTasks(userId: String) = localDataSource.selectAllByUserId(userId)
-    override suspend fun getActiveTasks(userId: String) = localDataSource.selectActiveByUserId(userId)
-    override suspend fun getCompletedTasks(userId: String) = localDataSource.selectCompletedByUserId(userId)
-    override suspend fun getTasksByDate(userId: String, date: Long) =
-        localDataSource.selectByDate(userId, date, date + 86_400_000L)
-    override suspend fun getTasksBySubject(userId: String, subject: String) =
-        localDataSource.selectBySubject(userId, subject)
-    override suspend fun getOverdueCount(userId: String, now: Long) =
-        localDataSource.selectOverdueCount(userId, now).toInt()
-    override suspend fun getCompletedCountInRange(userId: String, start: Long, end: Long) =
-        localDataSource.selectCompletedCountInRange(userId, start, end).toInt()
+    override suspend fun getAllTasks() = localDataSource.selectAllTasks()
+    override suspend fun getActiveTasks() = localDataSource.selectActiveTasks()
+    override suspend fun getCompletedTasks() = localDataSource.selectCompletedTasks()
+    override suspend fun getTasksByDate(date: Long) =
+        localDataSource.selectByDate(date, date + 86_400_000L)
+    override suspend fun getTasksBySubject(subject: String) =
+        localDataSource.selectBySubject(subject)
+    override suspend fun getOverdueCount(now: Long) =
+        localDataSource.selectOverdueCount(now).toInt()
+    override suspend fun getCompletedCountInRange(start: Long, end: Long) =
+        localDataSource.selectCompletedCountInRange(start, end).toInt()
     override suspend fun updateTask(task: Task) = localDataSource.updateTask(task)
     override suspend fun updateTaskStatus(taskId: String, status: TaskStatus, now: Long) =
         localDataSource.updateStatus(

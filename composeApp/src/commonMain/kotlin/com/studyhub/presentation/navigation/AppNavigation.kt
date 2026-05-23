@@ -11,8 +11,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.studyhub.presentation.screens.auth.LoginScreen
-import com.studyhub.presentation.screens.auth.RegisterScreen
 import com.studyhub.presentation.screens.calendar.CalendarScreen
 import com.studyhub.presentation.screens.home.HomeScreen
 import com.studyhub.presentation.screens.profile.ProfileScreen
@@ -47,8 +45,6 @@ fun AppNavigation() {
             popEnterTransition = { slideInHorizontally { -it } + fadeIn() },
             popExitTransition = { slideOutHorizontally { it } + fadeOut() }
         ) {
-            composable(Screen.Login.route) { LoginScreen(navController) }
-            composable(Screen.Register.route) { RegisterScreen(navController) }
             composable(Screen.Home.route) { HomeScreen(navController) }
             composable(Screen.Tasks.route) { TasksScreen(navController) }
             composable(Screen.Calendar.route) { CalendarScreen(navController) }
