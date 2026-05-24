@@ -10,11 +10,11 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.TaskStatus
@@ -22,6 +22,7 @@ import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.QuickStatCard
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.navigation.Screen
+import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -30,6 +31,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun HomeScreen(navController: NavController) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    var showAddBottomSheet by remember { mutableStateOf(false) }
+    var editingTaskId by remember { mutableStateOf<String?>(null) }
+    var deleteTaskConfirmId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) { viewModel.loadData() }
 
@@ -95,16 +100,25 @@ fun HomeScreen(navController: NavController) {
                     EmptyStateView(
                         message = "Tidak ada tugas hari ini",
                         actionLabel = "Tambah Tugas",
-                        onAction = { navController.navigate(Screen.AddTask.createRoute()) }
+                        onAction = { 
+                            editingTaskId = null
+                            showAddBottomSheet = true 
+                        }
                     )
                 }
             } else {
-                items(uiState.todayTasks, key = { it.id }) { task ->
+                items(
+                    items = uiState.todayTasks,
+                    key = { it.id },
+                    contentType = { "task_card" }
+                ) { task ->
                     TaskCard(
                         task = task,
-                        onStatusChange = {},
-                        onEdit = { navController.navigate(Screen.EditTask.createRoute(task.id)) },
-                        onDelete = {}
+                        onEdit = { 
+                            editingTaskId = task.id
+                            showAddBottomSheet = true 
+                        },
+                        onDelete = { deleteTaskConfirmId = task.id }
                     )
                 }
             }
@@ -113,15 +127,49 @@ fun HomeScreen(navController: NavController) {
                     Text("Akan Datang",
                         style = MaterialTheme.typography.titleLarge)
                 }
-                items(uiState.upcomingTasks, key = { it.id }) { task ->
+                items(
+                    items = uiState.upcomingTasks,
+                    key = { it.id },
+                    contentType = { "task_card" }
+                ) { task ->
                     TaskCard(
                         task = task,
-                        onStatusChange = {},
-                        onEdit = { navController.navigate(Screen.EditTask.createRoute(task.id)) },
-                        onDelete = {}
+                        onEdit = { 
+                            editingTaskId = task.id
+                            showAddBottomSheet = true 
+                        },
+                        onDelete = { deleteTaskConfirmId = task.id }
                     )
                 }
             }
         }
+    }
+    
+    if (showAddBottomSheet) {
+        AddEditTaskBottomSheet(
+            taskId = editingTaskId,
+            onDismiss = { showAddBottomSheet = false },
+            onSuccess = {
+                showAddBottomSheet = false
+                viewModel.loadData()
+            }
+        )
+    }
+
+    if (deleteTaskConfirmId != null) {
+        AlertDialog(
+            onDismissRequest = { deleteTaskConfirmId = null },
+            title = { Text("Hapus Tugas") },
+            text = { Text("Yakin ingin menghapus tugas ini?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTask(deleteTaskConfirmId!!)
+                    deleteTaskConfirmId = null
+                }) { Text("Hapus", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTaskConfirmId = null }) { Text("Batal") }
+            }
+        )
     }
 }

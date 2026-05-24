@@ -6,6 +6,7 @@ import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Subject
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.domain.usecase.subject.AddSubjectUseCase
 import com.studyhub.domain.usecase.subject.GetAllSubjectsUseCase
 import com.studyhub.domain.usecase.task.AddTaskUseCase
 import com.studyhub.domain.usecase.task.GetTaskByIdUseCase
@@ -29,7 +30,8 @@ class AddEditTaskViewModel(
     private val addTaskUseCase: AddTaskUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskByIdUseCase: GetTaskByIdUseCase,
-    private val getAllSubjectsUseCase: GetAllSubjectsUseCase
+    private val getAllSubjectsUseCase: GetAllSubjectsUseCase,
+    private val addSubjectUseCase: AddSubjectUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditTaskUiState())
@@ -48,6 +50,24 @@ class AddEditTaskViewModel(
         viewModelScope.launch {
             val subjects = getAllSubjectsUseCase()
             _uiState.update { it.copy(subjects = subjects) }
+        }
+    }
+
+    fun addSubject(name: String) {
+        viewModelScope.launch {
+            try {
+                val newSubject = Subject(
+                    id = "sub_${Clock.System.now().toEpochMilliseconds()}",
+                    name = name,
+                    colorHex = "#8B7355", // Default color
+                    icon = "school",
+                    createdAt = Clock.System.now().toEpochMilliseconds()
+                )
+                addSubjectUseCase(newSubject)
+                loadSubjects()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
         }
     }
 

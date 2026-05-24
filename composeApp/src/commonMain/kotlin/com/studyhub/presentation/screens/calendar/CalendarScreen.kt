@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ import com.studyhub.presentation.components.CalendarDayCell
 import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.navigation.Screen
+import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.theme.Spacing
 import kotlinx.datetime.*
 import org.koin.compose.viewmodel.koinViewModel
@@ -32,6 +34,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun CalendarScreen(navController: NavController) {
     val viewModel: CalendarViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    var showAddBottomSheet by remember { mutableStateOf(false) }
+    var editingTaskId by remember { mutableStateOf<String?>(null) }
+    var deleteTaskConfirmId by remember { mutableStateOf<String?>(null) }
 
     var currentMonth by remember {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -53,7 +59,7 @@ fun CalendarScreen(navController: NavController) {
     }
 
     val firstDayOfWeek = remember(currentMonth) {
-        currentMonth.dayOfWeek.isoDayNumber % 7 // 0 for Sunday, 1 for Monday
+        currentMonth.dayOfWeek.isoDayNumber % 7 // 0 for Sunday
     }
 
     Scaffold(
@@ -123,12 +129,22 @@ fun CalendarScreen(navController: NavController) {
                 contentPadding = PaddingValues(Spacing.extraSmall)
             ) {
                 // Empty cells
-                items(firstDayOfWeek) {
+                items(
+                    count = firstDayOfWeek,
+                    contentType = { "empty_cell" }
+                ) {
                     Box(modifier = Modifier.aspectRatio(1f))
                 }
 
                 // Days
-                items(daysInMonth) { index ->
+                items(
+                    count = daysInMonth,
+                    key = { index -> 
+                        val day = index + 1
+                        "day_${currentMonth.year}_${currentMonth.monthNumber}_$day"
+                    },
+                    contentType = { "day_cell" }
+                ) { index ->
                     val day = index + 1
                     val date = LocalDate(currentMonth.year, currentMonth.month, day)
                     val isSelected = date == uiState.selectedDate
@@ -163,25 +179,64 @@ fun CalendarScreen(navController: NavController) {
                 EmptyStateView(
                     message = "Tidak ada tugas untuk tanggal ini",
                     actionLabel = "Tambah Tugas",
-                    onAction = { navController.navigate(Screen.AddTask.createRoute(uiState.selectedDate.atStartOfDayMillis().toString())) },
+                    onAction = { 
+                        editingTaskId = null
+                        showAddBottomSheet = true 
+                    },
                     modifier = Modifier.weight(1f)
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(Spacing.normal),
+                    contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(Spacing.small)
                 ) {
-                    items(uiState.tasksOnSelectedDate, key = { it.id }) { task ->
+                    items(
+                        items = uiState.tasksOnSelectedDate,
+                        key = { it.id },
+                        contentType = { "task_card" }
+                    ) { task ->
                         TaskCard(
                             task = task,
-                            onStatusChange = {},
-                            onEdit = { navController.navigate(Screen.EditTask.createRoute(task.id)) },
-                            onDelete = {}
+                            onEdit = { 
+                                editingTaskId = task.id
+                                showAddBottomSheet = true 
+                            },
+                            onDelete = { deleteTaskConfirmId = task.id }
                         )
                     }
                 }
             }
         }
+    }
+    
+    if (showAddBottomSheet) {
+        AddEditTaskBottomSheet(
+            taskId = editingTaskId,
+            initialDate = uiState.selectedDate.atStartOfDayMillis(),
+            onDismiss = { showAddBottomSheet = false },
+            onSuccess = {
+                showAddBottomSheet = false
+                viewModel.loadAllTaskDates()
+                viewModel.selectDate(uiState.selectedDate)
+            }
+        )
+    }
+
+    if (deleteTaskConfirmId != null) {
+        AlertDialog(
+            onDismissRequest = { deleteTaskConfirmId = null },
+            title = { Text("Hapus Tugas") },
+            text = { Text("Yakin ingin menghapus tugas ini?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTask(deleteTaskConfirmId!!)
+                    deleteTaskConfirmId = null
+                }) { Text("Hapus", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTaskConfirmId = null }) { Text("Batal") }
+            }
+        )
     }
 }

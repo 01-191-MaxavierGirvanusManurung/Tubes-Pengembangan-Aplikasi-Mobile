@@ -17,9 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.Priority
-import com.studyhub.presentation.theme.PriorityHigh
-import com.studyhub.presentation.theme.PriorityMedium
-import com.studyhub.presentation.theme.PriorityLow
 import com.studyhub.presentation.theme.Spacing
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -146,15 +143,6 @@ fun AddEditTaskScreen(
                             }
                         )
                     }
-                    if (uiState.subjects.isEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text("Umum") },
-                            onClick = {
-                                selectedSubject = "Umum"
-                                expandedSubjects = false
-                            }
-                        )
-                    }
                 }
             }
 
@@ -167,19 +155,7 @@ fun AddEditTaskScreen(
                     FilterChip(
                         selected = priority == p,
                         onClick = { priority = p },
-                        label = { Text(p.name) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = when (p) {
-                                Priority.HIGH -> PriorityHigh
-                                Priority.MEDIUM -> PriorityMedium
-                                Priority.LOW -> PriorityLow
-                            },
-                            selectedLabelColor = when (p) {
-                                Priority.HIGH -> MaterialTheme.colorScheme.onError
-                                Priority.MEDIUM -> Color.Black
-                                Priority.LOW -> Color.White
-                            }
-                        )
+                        label = { Text(p.name) }
                     )
                 }
             }

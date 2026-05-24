@@ -6,8 +6,11 @@ import com.studyhub.core.util.atEndOfDayMillis
 import com.studyhub.core.util.atStartOfDayMillis
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,14 +31,15 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val getActiveTasksUseCase: GetActiveTasksUseCase,
-    private val getTasksByDateUseCase: GetTasksByDateUseCase
+    private val getTasksByDateUseCase: GetTasksByDateUseCase,
+    private val deleteTaskUseCase: DeleteTaskUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     fun loadData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -59,6 +63,13 @@ class HomeViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
+        }
+    }
+
+    fun deleteTask(taskId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteTaskUseCase(taskId)
+            loadData()
         }
     }
 }

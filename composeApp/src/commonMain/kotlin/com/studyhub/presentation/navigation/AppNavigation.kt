@@ -1,5 +1,6 @@
 package com.studyhub.presentation.navigation
 
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -40,10 +41,22 @@ fun AppNavigation() {
             navController = navController,
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(padding),
-            enterTransition = { slideInHorizontally { it } + fadeIn() },
-            exitTransition = { slideOutHorizontally { -it } + fadeOut() },
-            popEnterTransition = { slideInHorizontally { -it } + fadeIn() },
-            popExitTransition = { slideOutHorizontally { it } + fadeOut() }
+            enterTransition = { 
+                fadeIn(animationSpec = tween(300)) + 
+                slideInHorizontally(animationSpec = tween(300)) { it / 10 } 
+            },
+            exitTransition = { 
+                fadeOut(animationSpec = tween(300)) + 
+                slideOutHorizontally(animationSpec = tween(300)) { -it / 10 } 
+            },
+            popEnterTransition = { 
+                fadeIn(animationSpec = tween(300)) + 
+                slideInHorizontally(animationSpec = tween(300)) { -it / 10 } 
+            },
+            popExitTransition = { 
+                fadeOut(animationSpec = tween(300)) + 
+                slideOutHorizontally(animationSpec = tween(300)) { it / 10 } 
+            }
         ) {
             composable(Screen.Home.route) { HomeScreen(navController) }
             composable(Screen.Tasks.route) { TasksScreen(navController) }

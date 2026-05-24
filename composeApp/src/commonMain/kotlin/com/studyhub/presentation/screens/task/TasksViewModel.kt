@@ -7,11 +7,15 @@ import com.studyhub.domain.model.SortBy
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.usecase.task.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+enum class ViewMode { LIST, GRID }
 
 data class TasksUiState(
     val allTasks: List<Task> = emptyList(),
@@ -21,6 +25,7 @@ data class TasksUiState(
     val filterPriority: Priority? = null,
     val filterSubject: String? = null,
     val sortBy: SortBy = SortBy.DUE_DATE,
+    val viewMode: ViewMode = ViewMode.LIST,
     val isLoading: Boolean = false,
     val error: String? = null,
     val deleteConfirmTaskId: String? = null
@@ -37,7 +42,7 @@ class TasksViewModel(
     val uiState: StateFlow<TasksUiState> = _uiState.asStateFlow()
 
     fun loadTasks() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val tasks = getAllTasksUseCase()
@@ -50,14 +55,14 @@ class TasksViewModel(
     }
 
     fun updateStatus(taskId: String, status: TaskStatus) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             updateTaskStatusUseCase(taskId, status)
             loadTasks()
         }
     }
 
     fun deleteTask(taskId: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             deleteTaskUseCase(taskId)
             loadTasks()
         }
@@ -78,6 +83,12 @@ class TasksViewModel(
     fun setSortBy(sortBy: SortBy) {
         _uiState.update { it.copy(sortBy = sortBy) }
         applyFilter()
+    }
+
+    fun toggleViewMode() {
+        _uiState.update { 
+            it.copy(viewMode = if (it.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST) 
+        }
     }
 
     fun clearFilters() {

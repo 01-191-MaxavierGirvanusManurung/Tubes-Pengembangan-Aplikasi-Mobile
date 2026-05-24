@@ -6,6 +6,8 @@ import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.usecase.preferences.GetUserPreferencesUseCase
 import com.studyhub.domain.usecase.preferences.SetDarkModeUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -38,7 +40,7 @@ class ProfileViewModel(
     }
 
     private fun observePreferences() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             getUserPreferencesUseCase().collect { prefs ->
                 _uiState.update {
                     it.copy(
@@ -56,7 +58,7 @@ class ProfileViewModel(
     }
 
     private fun loadStats() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val tasks = getActiveTasksUseCase()
                 val now = Clock.System.now().toEpochMilliseconds()

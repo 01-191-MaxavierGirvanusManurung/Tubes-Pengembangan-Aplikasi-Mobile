@@ -1,146 +1,246 @@
 package com.studyhub.presentation.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.presentation.theme.PriorityHigh
-import com.studyhub.presentation.theme.PriorityMedium
-import com.studyhub.presentation.theme.PriorityLow
-import com.studyhub.presentation.theme.Spacing
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import com.studyhub.presentation.theme.*
+import kotlinx.datetime.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskCard(
     task: Task,
-    onStatusChange: (TaskStatus) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val priorityColor = when (task.priority) {
-        Priority.HIGH -> PriorityHigh
-        Priority.MEDIUM -> PriorityMedium
-        Priority.LOW -> PriorityLow
+    val statusIcon = when (task.status) {
+        TaskStatus.DONE -> Icons.Default.CheckCircle
+        TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
+        TaskStatus.TODO -> Icons.Default.Info
+    }
+    val statusColor = when (task.status) {
+        TaskStatus.DONE -> PriorityLow
+        TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
+        TaskStatus.TODO -> MaterialTheme.colorScheme.outline
     }
 
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete(); true
-            } else false
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(end = Spacing.normal),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(Icons.Default.Delete, null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer)
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = statusIcon,
+                contentDescription = null,
+                tint = statusColor,
+                modifier = Modifier.size(24.dp)
+            )
+            
+            Spacer(Modifier.width(12.dp))
+            
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(Modifier.height(4.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.wrapContentWidth()
+                ) {
+                    TaskTag(task.subject, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
+                    TaskTag(task.priority.name.lowercase(), getPriorityColor(task.priority), Color.White)
+                    TaskTag(formatDeadline(task.dueDate), Color(0xFFFEF3C7), Color(0xFF92400E))
+                    TaskTag("~${task.estimatedMinutes}m", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
             }
         }
+    }
+}
+
+@Composable
+fun TaskGridCard(
+    task: Task,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val statusIcon = when (task.status) {
+        TaskStatus.DONE -> Icons.Default.CheckCircle
+        TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
+        TaskStatus.TODO -> Icons.Default.Info
+    }
+    val statusColor = when (task.status) {
+        TaskStatus.DONE -> PriorityLow
+        TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
+        TaskStatus.TODO -> MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = MaterialTheme.shapes.large
-        ) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
-                Modifier.padding(Spacing.normal),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AnimatedContent(
-                    targetState = task.status == TaskStatus.DONE,
-                    transitionSpec = {
-                        scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut()
-                    }
-                ) { isDone ->
-                    Checkbox(
-                        checked = isDone,
-                        onCheckedChange = { checked ->
-                            onStatusChange(
-                                if (checked) TaskStatus.DONE else TaskStatus.TODO
-                            )
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
                 Box(
-                    Modifier
-                        .width(3.dp)
-                        .height(48.dp)
+                    modifier = Modifier
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(priorityColor)
-                )
-                Spacer(Modifier.width(Spacing.small))
-                Column(Modifier.weight(1f)) {
-                    Text(task.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis)
-                    Text(task.subject,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        "Deadline: ${formatDeadline(task.dueDate)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (task.dueDate < currentMillis() &&
-                            task.status != TaskStatus.DONE)
-                            MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        task.subject.take(1).uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, "Edit",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                Icon(
+                    imageVector = statusIcon,
+                    contentDescription = null,
+                    tint = statusColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            Spacer(Modifier.height(12.dp))
+            
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.height(40.dp)
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    formatDeadline(task.dueDate),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFFB45309)
+                )
+                Text(
+                    task.priority.name.lowercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = getPriorityColor(task.priority),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(Modifier.height(8.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Button(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f).height(32.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEF3C7)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Edit, null, tint = Color(0xFFB45309), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Edit", color = Color(0xFFB45309), fontSize = 10.sp)
+                }
+                Button(
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f).height(32.dp),
+                    contentPadding = PaddingValues(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEE2E2)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Delete, null, tint = Color(0xFFB91C1C), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Delete", color = Color(0xFFB91C1C), fontSize = 10.sp)
                 }
             }
         }
     }
+}
+
+@Composable
+fun TaskTag(text: String, containerColor: Color, textColor: Color) {
+    Surface(
+        color = containerColor,
+        shape = RoundedCornerShape(4.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            fontSize = 9.sp
+        )
+    }
+}
+
+private fun getPriorityColor(priority: Priority): Color = when (priority) {
+    Priority.HIGH -> PriorityHigh
+    Priority.MEDIUM -> PriorityMedium
+    Priority.LOW -> PriorityLow
 }
 
 fun formatDeadline(epochMillis: Long): String {
-    val dateTime = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
-    val day = dateTime.dayOfMonth.toString().padStart(2, '0')
-    val month = dateTime.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
-    val year = dateTime.year
-    return "$day $month $year"
-}
-
-fun currentMillis(): Long {
-    return kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+    val now = Clock.System.now().toEpochMilliseconds()
+    val diff = epochMillis - now
+    val days = (diff / 86400000L).toInt()
+    
+    return when {
+        days == 0 -> "Today"
+        days == 1 -> "Tomorrow"
+        days > 1 -> "${days}d left"
+        else -> "Overdue"
+    }
 }

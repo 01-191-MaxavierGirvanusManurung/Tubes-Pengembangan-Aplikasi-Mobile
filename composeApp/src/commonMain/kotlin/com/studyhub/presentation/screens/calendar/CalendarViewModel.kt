@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studyhub.core.util.toLocalDate
 import com.studyhub.domain.model.Task
+import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,14 +28,15 @@ data class CalendarUiState(
 
 class CalendarViewModel(
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
-    private val getAllTasksUseCase: GetAllTasksUseCase
+    private val getAllTasksUseCase: GetAllTasksUseCase,
+    private val deleteTaskUseCase: DeleteTaskUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
 
     fun loadAllTaskDates() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val tasks = getAllTasksUseCase()
                 val dates = tasks.map { it.dueDate.toLocalDate() }.toSet()
@@ -44,7 +48,7 @@ class CalendarViewModel(
     }
 
     fun selectDate(date: LocalDate) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true, selectedDate = date) }
             try {
                 val tasks = getTasksByDateUseCase(date)
@@ -52,6 +56,14 @@ class CalendarViewModel(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    fun deleteTask(taskId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteTaskUseCase(taskId)
+            loadAllTaskDates()
+            selectDate(_uiState.value.selectedDate)
         }
     }
 }
