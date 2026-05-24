@@ -1,5 +1,6 @@
 package com.studyhub.presentation.navigation
 
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.padding
@@ -26,6 +27,8 @@ fun AppNavigation() {
         .currentBackStackEntryAsState().value?.destination?.route
     val showBottomBar = currentRoute in listOf("home", "tasks", "calendar", "profile")
 
+    val navOrder = listOf(Screen.Home.route, Screen.Tasks.route, Screen.Calendar.route, Screen.Profile.route)
+
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
@@ -42,20 +45,24 @@ fun AppNavigation() {
             startDestination = Screen.Home.route,
             modifier = Modifier.padding(padding),
             enterTransition = { 
-                fadeIn(animationSpec = tween(300)) + 
-                slideInHorizontally(animationSpec = tween(300)) { it / 10 } 
+                val isRight = navOrder.indexOf(targetState.destination.route) > navOrder.indexOf(initialState.destination.route)
+                slideInHorizontally(animationSpec = tween(220, easing = EaseInOut)) { if (isRight) 60 else -60 } + 
+                fadeIn(animationSpec = tween(220, easing = EaseInOut))
             },
             exitTransition = { 
-                fadeOut(animationSpec = tween(300)) + 
-                slideOutHorizontally(animationSpec = tween(300)) { -it / 10 } 
+                val isRight = navOrder.indexOf(targetState.destination.route) > navOrder.indexOf(initialState.destination.route)
+                slideOutHorizontally(animationSpec = tween(220, easing = EaseInOut)) { if (isRight) -60 else 60 } + 
+                fadeOut(animationSpec = tween(220, easing = EaseInOut))
             },
             popEnterTransition = { 
-                fadeIn(animationSpec = tween(300)) + 
-                slideInHorizontally(animationSpec = tween(300)) { -it / 10 } 
+                val isRight = navOrder.indexOf(targetState.destination.route) > navOrder.indexOf(initialState.destination.route)
+                slideInHorizontally(animationSpec = tween(220, easing = EaseInOut)) { if (isRight) 60 else -60 } + 
+                fadeIn(animationSpec = tween(220, easing = EaseInOut))
             },
             popExitTransition = { 
-                fadeOut(animationSpec = tween(300)) + 
-                slideOutHorizontally(animationSpec = tween(300)) { it / 10 } 
+                val isRight = navOrder.indexOf(targetState.destination.route) > navOrder.indexOf(initialState.destination.route)
+                slideOutHorizontally(animationSpec = tween(220, easing = EaseInOut)) { if (isRight) -60 else 60 } + 
+                fadeOut(animationSpec = tween(220, easing = EaseInOut))
             }
         ) {
             composable(Screen.Home.route) { HomeScreen(navController) }

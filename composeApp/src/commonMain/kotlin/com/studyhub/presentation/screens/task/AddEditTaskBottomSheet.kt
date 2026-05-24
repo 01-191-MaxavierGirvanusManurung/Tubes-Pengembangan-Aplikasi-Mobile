@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.presentation.theme.Spacing
+import com.studyhub.presentation.theme.*
 import kotlinx.datetime.*
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -78,7 +78,7 @@ fun AddEditTaskBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         dragHandle = { BottomSheetDefaults.DragHandle() },
-        containerColor = Color(0xFFFAF9F6),
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
     ) {
         Column(
@@ -98,35 +98,43 @@ fun AddEditTaskBottomSheet(
                     Text(
                         text = if (taskId == null) "New Task" else "Edit Task",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Add a new study task",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier.clip(CircleShape).background(Color.White)
+                    modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Icon(Icons.Default.Close, null)
+                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Spacer(Modifier.height(24.dp))
 
             // Task Title
-            Text("Task Title *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Task Title *", 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                placeholder = { Text("e.g. Complete Math Assignment...", color = Color.LightGray) },
+                placeholder = { Text("e.g. Complete Math Assignment...", color = MaterialTheme.colorScheme.outline) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
@@ -135,7 +143,12 @@ fun AddEditTaskBottomSheet(
 
             // Subject
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Subject", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    "Subject", 
+                    style = MaterialTheme.typography.titleSmall, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { showAddSubjectDialog = true }, modifier = Modifier.size(24.dp)) {
                     Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary)
@@ -157,12 +170,12 @@ fun AddEditTaskBottomSheet(
                         label = { Text(sub, fontSize = 12.sp) },
                         shape = RoundedCornerShape(16.dp),
                         colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
-                            labelColor = if (isSelected) Color.White else Color.Gray
+                            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         border = SuggestionChipDefaults.suggestionChipBorder(
                             enabled = true,
-                            borderColor = if (isSelected) Color.Transparent else Color(0xFFE5E7EB)
+                            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant
                         )
                     )
                 }
@@ -173,7 +186,12 @@ fun AddEditTaskBottomSheet(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Due Date
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Due Date *", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Due Date *", 
+                        style = MaterialTheme.typography.titleSmall, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = Instant.fromEpochMilliseconds(dueDate).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
@@ -181,9 +199,15 @@ fun AddEditTaskBottomSheet(
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary
+                        ),
                         trailingIcon = {
                             IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, null, Modifier.size(20.dp))
+                                Icon(Icons.Default.CalendarToday, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     )
@@ -191,7 +215,12 @@ fun AddEditTaskBottomSheet(
 
                 // Est Time
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Est. Time (min)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Est. Time (min)", 
+                        style = MaterialTheme.typography.titleSmall, 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -199,19 +228,20 @@ fun AddEditTaskBottomSheet(
                             .fillMaxWidth()
                             .height(56.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF3F4F6))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         IconButton(onClick = { if (estimatedMinutes > 5) estimatedMinutes -= 5 }) {
-                            Icon(Icons.Default.Remove, null, Modifier.size(16.dp))
+                            Icon(Icons.Default.Remove, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(
                             text = estimatedMinutes.toString(),
                             modifier = Modifier.weight(1f),
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         IconButton(onClick = { estimatedMinutes += 5 }) {
-                            Icon(Icons.Default.Add, null, Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -220,15 +250,20 @@ fun AddEditTaskBottomSheet(
             Spacer(Modifier.height(16.dp))
 
             // Priority
-            Text("Priority", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Priority", 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Priority.entries.forEach { p ->
                     val isSelected = priority == p
                     val pColor = when (p) {
-                        Priority.LOW -> Color(0xFF10B981)
-                        Priority.MEDIUM -> Color(0xFFF59E0B)
-                        Priority.HIGH -> Color(0xFFEF4444)
+                        Priority.LOW -> PriorityLow
+                        Priority.MEDIUM -> PriorityMedium
+                        Priority.HIGH -> PriorityHigh
                     }
                     
                     Surface(
@@ -236,10 +271,10 @@ fun AddEditTaskBottomSheet(
                             .weight(1f)
                             .clickable { priority = p },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) pColor.copy(alpha = 0.1f) else Color.White,
+                        color = if (isSelected) pColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp, 
-                            if (isSelected) pColor else Color(0xFFE5E7EB)
+                            if (isSelected) pColor else MaterialTheme.colorScheme.outlineVariant
                         )
                     ) {
                         Row(
@@ -249,7 +284,11 @@ fun AddEditTaskBottomSheet(
                         ) {
                             Box(Modifier.size(8.dp).clip(CircleShape).background(pColor))
                             Spacer(Modifier.width(8.dp))
-                            Text(p.name.lowercase().replaceFirstChar { it.uppercase() }, fontSize = 12.sp, color = if (isSelected) pColor else Color.Gray)
+                            Text(
+                                p.name.lowercase().replaceFirstChar { it.uppercase() }, 
+                                fontSize = 12.sp, 
+                                color = if (isSelected) pColor else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
@@ -258,7 +297,12 @@ fun AddEditTaskBottomSheet(
             Spacer(Modifier.height(16.dp))
 
             // Status
-            Text("Status", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Status", 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TaskStatus.entries.forEach { s ->
@@ -268,13 +312,25 @@ fun AddEditTaskBottomSheet(
                         onClick = { status = s },
                         label = { Text(s.value.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 11.sp) },
                         modifier = Modifier.weight(1f),
+                        colors = InputChipDefaults.inputChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = InputChipDefaults.inputChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant,
+                            selectedBorderColor = MaterialTheme.colorScheme.primary
+                        ),
                         leadingIcon = {
                            val icon = when(s) {
                                TaskStatus.TODO -> Icons.Default.Description
                                TaskStatus.IN_PROGRESS -> Icons.Default.HourglassEmpty
                                TaskStatus.DONE -> Icons.Default.Check
                            }
-                           Icon(icon, null, Modifier.size(14.dp))
+                           Icon(icon, null, Modifier.size(14.dp), tint = if(isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     )
                 }
@@ -283,16 +339,23 @@ fun AddEditTaskBottomSheet(
             Spacer(Modifier.height(16.dp))
 
             // Description
-            Text("Description", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Description", 
+                style = MaterialTheme.typography.titleSmall, 
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                placeholder = { Text("Add details about this task...", color = Color.LightGray) },
+                placeholder = { Text("Add details about this task...", color = MaterialTheme.colorScheme.outline) },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFE5E7EB),
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
@@ -304,7 +367,10 @@ fun AddEditTaskBottomSheet(
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.weight(0.4f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF3F4F6), contentColor = Color.Gray),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant, 
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("Cancel")
@@ -322,12 +388,15 @@ fun AddEditTaskBottomSheet(
                         )
                     },
                     modifier = Modifier.weight(0.6f).height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B7355)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     shape = RoundedCornerShape(16.dp),
                     enabled = title.isNotBlank() && !uiState.isLoading
                 ) {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                     } else {
                         Icon(Icons.Default.Save, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -361,14 +430,19 @@ fun AddEditTaskBottomSheet(
     if (showAddSubjectDialog) {
         AlertDialog(
             onDismissRequest = { showAddSubjectDialog = false },
-            title = { Text("Add Subject") },
+            title = { Text("Add Subject", color = MaterialTheme.colorScheme.onSurface) },
+            containerColor = MaterialTheme.colorScheme.surface,
             text = {
                 OutlinedTextField(
                     value = newSubjectName,
                     onValueChange = { newSubjectName = it },
                     label = { Text("Subject Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             },
             confirmButton = {
@@ -379,10 +453,10 @@ fun AddEditTaskBottomSheet(
                         newSubjectName = ""
                         showAddSubjectDialog = false
                     }
-                }) { Text("Add") }
+                }) { Text("Add", color = MaterialTheme.colorScheme.primary) }
             },
             dismissButton = {
-                TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showAddSubjectDialog = false }) { Text("Cancel", color = MaterialTheme.colorScheme.outline) }
             }
         )
     }

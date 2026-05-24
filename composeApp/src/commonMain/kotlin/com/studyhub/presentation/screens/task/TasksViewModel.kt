@@ -26,6 +26,7 @@ data class TasksUiState(
     val filterSubject: String? = null,
     val sortBy: SortBy = SortBy.DUE_DATE,
     val viewMode: ViewMode = ViewMode.LIST,
+    val taskCounts: Map<String, Int> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val deleteConfirmTaskId: String? = null
@@ -46,7 +47,13 @@ class TasksViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val tasks = getAllTasksUseCase()
-                _uiState.update { it.copy(isLoading = false, allTasks = tasks) }
+                val counts = mapOf(
+                    "all" to tasks.size,
+                    TaskStatus.TODO.value to tasks.count { it.status == TaskStatus.TODO },
+                    TaskStatus.IN_PROGRESS.value to tasks.count { it.status == TaskStatus.IN_PROGRESS },
+                    TaskStatus.DONE.value to tasks.count { it.status == TaskStatus.DONE }
+                )
+                _uiState.update { it.copy(isLoading = false, allTasks = tasks, taskCounts = counts) }
                 applyFilter()
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }

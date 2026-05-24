@@ -43,14 +43,17 @@ fun TaskCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().wrapContentHeight(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier
+                .padding(vertical = 16.dp, horizontal = 18.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Icon(
                 imageVector = statusIcon,
@@ -59,9 +62,10 @@ fun TaskCard(
                 modifier = Modifier.size(24.dp)
             )
             
-            Spacer(Modifier.width(12.dp))
-            
-            Column(Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp) // Secondary internal gap
+            ) {
                 Text(
                     text = task.title,
                     style = MaterialTheme.typography.titleSmall,
@@ -70,10 +74,8 @@ fun TaskCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                Spacer(Modifier.height(4.dp))
-                
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.wrapContentWidth()
                 ) {
@@ -84,11 +86,16 @@ fun TaskCard(
                 }
             }
             
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                }
             }
         }
     }
@@ -113,12 +120,15 @@ fun TaskGridCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().wrapContentHeight(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -146,18 +156,14 @@ fun TaskGridCard(
                 )
             }
             
-            Spacer(Modifier.height(12.dp))
-            
             Text(
                 text = task.title,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.height(40.dp)
+                modifier = Modifier.wrapContentHeight().defaultMinSize(minHeight = 40.dp)
             )
-            
-            Spacer(Modifier.height(12.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -177,33 +183,31 @@ fun TaskGridCard(
                 )
             }
             
-            Spacer(Modifier.height(8.dp))
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
                     onClick = onEdit,
-                    modifier = Modifier.weight(1f).height(32.dp),
+                    modifier = Modifier.weight(1f).height(36.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEF3C7)),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(Icons.Default.Edit, null, tint = Color(0xFFB45309), modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Edit", color = Color(0xFFB45309), fontSize = 10.sp)
+                    Text("Edit", color = Color(0xFFB45309), fontSize = 11.sp)
                 }
                 Button(
                     onClick = onDelete,
-                    modifier = Modifier.weight(1f).height(32.dp),
+                    modifier = Modifier.weight(1f).height(36.dp),
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEE2E2)),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(10.dp)
                 ) {
                     Icon(Icons.Default.Delete, null, tint = Color(0xFFB91C1C), modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Delete", color = Color(0xFFB91C1C), fontSize = 10.sp)
+                    Text("Delete", color = Color(0xFFB91C1C), fontSize = 11.sp)
                 }
             }
         }
