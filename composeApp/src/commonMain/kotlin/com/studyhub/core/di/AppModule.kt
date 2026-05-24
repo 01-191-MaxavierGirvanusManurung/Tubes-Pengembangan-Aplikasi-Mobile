@@ -5,15 +5,17 @@ import com.studyhub.data.local.DatabaseDriverFactory
 import com.studyhub.database.StudyHubDatabase
 import com.studyhub.data.local.LocalSubjectDataSource
 import com.studyhub.data.local.LocalTaskDataSource
-import com.studyhub.data.local.datastore.DataStoreFactory
-import com.studyhub.data.local.datastore.UserPreferences
-import com.studyhub.data.local.datastore.create
 import com.studyhub.data.repository.SubjectRepositoryImpl
 import com.studyhub.data.repository.TaskRepositoryImpl
 import com.studyhub.domain.repository.SubjectRepository
 import com.studyhub.domain.repository.TaskRepository
 import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
+import com.studyhub.domain.usecase.preferences.*
+import com.studyhub.data.local.PreferencesDataSource
+import com.studyhub.domain.repository.PreferencesRepository
+import com.studyhub.data.repository.PreferencesRepositoryImpl
+import com.studyhub.presentation.theme.ThemeViewModel
 import com.studyhub.presentation.screens.add_task.AddTaskViewModel
 import com.studyhub.presentation.screens.home.HomeViewModel
 import com.studyhub.presentation.screens.task.TasksViewModel
@@ -43,8 +45,7 @@ val databaseModule = module {
 // ==================== PREFERENCES MODULE ====================
 
 val preferencesModule = module {
-    single { get<DataStoreFactory>().create() }
-    single { UserPreferences(get()) }
+    single { PreferencesDataSource(get()) }
 }
 
 // ==================== REPOSITORY MODULE ====================
@@ -52,6 +53,7 @@ val preferencesModule = module {
 val repositoryModule = module {
     single<TaskRepository> { TaskRepositoryImpl(get()) }
     single<SubjectRepository> { SubjectRepositoryImpl(get()) }
+    single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
 }
 
 // ==================== USE CASE MODULE ====================
@@ -68,6 +70,9 @@ val useCaseModule = module {
     factory { FilterAndSortTasksUseCase() }
     factory { GetAllSubjectsUseCase(get()) }
     factory { AddSubjectUseCase(get()) }
+    factory { GetDarkModeUseCase(get()) }
+    factory { SetDarkModeUseCase(get()) }
+    factory { GetUserPreferencesUseCase(get()) }
 }
 
 // ==================== VIEWMODEL MODULE ====================
@@ -79,6 +84,7 @@ val viewModelModule = module {
     viewModelOf(::AddEditTaskViewModel)
     viewModelOf(::CalendarViewModel)
     viewModelOf(::ProfileViewModel)
+    viewModelOf(::ThemeViewModel)
 }
 
 // ==================== SHARED MODULES ====================

@@ -1,9 +1,12 @@
 package com.studyhub.data.repository
 
+import com.studyhub.core.util.atEndOfDayMillis
+import com.studyhub.core.util.atStartOfDayMillis
 import com.studyhub.data.local.LocalTaskDataSource
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.repository.TaskRepository
+import kotlinx.datetime.LocalDate
 
 class TaskRepositoryImpl(
     private val localDataSource: LocalTaskDataSource
@@ -13,8 +16,8 @@ class TaskRepositoryImpl(
     override suspend fun getAllTasks() = localDataSource.selectAllTasks()
     override suspend fun getActiveTasks() = localDataSource.selectActiveTasks()
     override suspend fun getCompletedTasks() = localDataSource.selectCompletedTasks()
-    override suspend fun getTasksByDate(date: Long) =
-        localDataSource.selectByDate(date, date + 86_400_000L)
+    override suspend fun getTasksByDate(date: LocalDate) =
+        localDataSource.selectByDate(date.atStartOfDayMillis(), date.atEndOfDayMillis() + 1)
     override suspend fun getTasksBySubject(subject: String) =
         localDataSource.selectBySubject(subject)
     override suspend fun getOverdueCount(now: Long) =

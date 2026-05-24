@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.presentation.theme.PriorityHigh
+import com.studyhub.presentation.theme.PriorityMedium
+import com.studyhub.presentation.theme.PriorityLow
 import com.studyhub.presentation.theme.Spacing
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -38,9 +41,9 @@ fun TaskCard(
     modifier: Modifier = Modifier
 ) {
     val priorityColor = when (task.priority) {
-        Priority.HIGH -> MaterialTheme.colorScheme.error
-        Priority.MEDIUM -> Color(0xFFF59E0B)
-        Priority.LOW -> Color(0xFF22C55E)
+        Priority.HIGH -> PriorityHigh
+        Priority.MEDIUM -> PriorityMedium
+        Priority.LOW -> PriorityLow
     }
 
     val dismissState = rememberSwipeToDismissBoxState(

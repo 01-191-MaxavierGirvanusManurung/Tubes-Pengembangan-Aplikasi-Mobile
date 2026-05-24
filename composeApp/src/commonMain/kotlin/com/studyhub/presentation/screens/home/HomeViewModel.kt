@@ -2,6 +2,8 @@ package com.studyhub.presentation.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.studyhub.core.util.atEndOfDayMillis
+import com.studyhub.core.util.atStartOfDayMillis
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
@@ -11,6 +13,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 data class HomeUiState(
     val todayTasks: List<Task> = emptyList(),
@@ -33,11 +38,13 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val today = currentMillis()
-                val startOfDay = today - (today % 86_400_000L)
-                val todayTasks = getTasksByDateUseCase(startOfDay)
+                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                val today = now.date
+                val todayTasks = getTasksByDateUseCase(today)
                 val allActive = getActiveTasksUseCase()
-                val upcoming = allActive.filter { it.dueDate > startOfDay + 86_400_000L }
+                val startOfTomorrow = today.atEndOfDayMillis() + 1
+                
+                val upcoming = allActive.filter { it.dueDate >= startOfTomorrow }
                     .take(5)
                 _uiState.update {
                     it.copy(
@@ -45,7 +52,7 @@ class HomeViewModel(
                         todayTasks = todayTasks,
                         upcomingTasks = upcoming,
                         overdueCount = allActive.count {
-                            t -> t.dueDate < today && t.status != TaskStatus.DONE
+                            t -> t.dueDate < Clock.System.now().toEpochMilliseconds() && t.status != TaskStatus.DONE
                         }
                     )
                 }
@@ -53,9 +60,5 @@ class HomeViewModel(
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
-    }
-
-    private fun currentMillis(): Long {
-        return kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
     }
 }

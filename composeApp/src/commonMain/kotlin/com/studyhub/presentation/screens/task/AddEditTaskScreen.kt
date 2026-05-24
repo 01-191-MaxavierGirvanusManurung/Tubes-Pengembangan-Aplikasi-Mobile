@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.Priority
+import com.studyhub.presentation.theme.PriorityHigh
+import com.studyhub.presentation.theme.PriorityMedium
+import com.studyhub.presentation.theme.PriorityLow
 import com.studyhub.presentation.theme.Spacing
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -167,14 +170,14 @@ fun AddEditTaskScreen(
                         label = { Text(p.name) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = when (p) {
-                                Priority.HIGH -> MaterialTheme.colorScheme.errorContainer
-                                Priority.MEDIUM -> Color(0xFFF59E0B)
-                                Priority.LOW -> MaterialTheme.colorScheme.secondaryContainer
+                                Priority.HIGH -> PriorityHigh
+                                Priority.MEDIUM -> PriorityMedium
+                                Priority.LOW -> PriorityLow
                             },
                             selectedLabelColor = when (p) {
-                                Priority.HIGH -> MaterialTheme.colorScheme.onErrorContainer
-                                Priority.MEDIUM -> Color(0xFFFEF3C7)
-                                Priority.LOW -> MaterialTheme.colorScheme.onSecondaryContainer
+                                Priority.HIGH -> MaterialTheme.colorScheme.onError
+                                Priority.MEDIUM -> Color.Black
+                                Priority.LOW -> Color.White
                             }
                         )
                     )

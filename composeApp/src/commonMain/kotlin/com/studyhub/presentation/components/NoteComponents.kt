@@ -50,7 +50,8 @@ fun NoteCard(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = Color(note.color.hexValue),
+        targetValue = if (note.color == NoteColor.DEFAULT) MaterialTheme.colorScheme.surfaceVariant
+                      else Color(note.color.hexValue),
         label = "card_bg"
     )
     
@@ -242,12 +243,12 @@ fun ColorPickerRow(
                     .size(32.dp)
                     .alpha(alpha)
                     .clip(CircleShape)
-                    .background(Color(color.hexValue))
+                    .background(if (color == NoteColor.DEFAULT) MaterialTheme.colorScheme.surfaceVariant else Color(color.hexValue))
                     .clickable { onColorSelected(color) }
                     .then(
                         if (isSelected) {
                             Modifier.background(
-                                Color.Black.copy(alpha = 0.1f),
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                                 CircleShape
                             )
                         } else Modifier

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.core.util.atStartOfDayMillis
 import com.studyhub.presentation.components.CalendarDayCell
 import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.TaskCard
@@ -32,8 +33,9 @@ fun CalendarScreen(navController: NavController) {
     val viewModel: CalendarViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var currentMonth by remember { 
-        mutableStateOf(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.let { LocalDate(it.year, it.month, 1) }) 
+    var currentMonth by remember {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        mutableStateOf(LocalDate(today.year, today.month, 1))
     }
 
     LaunchedEffect(Unit) {
@@ -42,13 +44,16 @@ fun CalendarScreen(navController: NavController) {
     }
 
     val daysInMonth = remember(currentMonth) {
-        val nextMonth = if (currentMonth.monthNumber == 12) LocalDate(currentMonth.year + 1, 1, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
-        val lastDay = nextMonth.toEpochDays() - 1
-        LocalDate.fromEpochDays(lastDay).dayOfMonth
+        val firstDayOfNextMonth = if (currentMonth.monthNumber == 12)
+            LocalDate(currentMonth.year + 1, 1, 1)
+        else
+            LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
+        val lastDayOfMonth = firstDayOfNextMonth.minus(1, DateTimeUnit.DAY)
+        lastDayOfMonth.dayOfMonth
     }
 
     val firstDayOfWeek = remember(currentMonth) {
-        currentMonth.dayOfWeek.isoDayNumber % 7 // 0 for Sunday
+        currentMonth.dayOfWeek.isoDayNumber % 7 // 0 for Sunday, 1 for Monday
     }
 
     Scaffold(
@@ -72,18 +77,24 @@ fun CalendarScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${currentMonth.month.name} ${currentMonth.year}",
+                    text = "${currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${currentMonth.year}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Row {
                     IconButton(onClick = {
-                        currentMonth = if (currentMonth.monthNumber == 1) LocalDate(currentMonth.year - 1, 12, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber - 1, 1)
+                        currentMonth = if (currentMonth.monthNumber == 1)
+                            LocalDate(currentMonth.year - 1, 12, 1)
+                        else
+                            LocalDate(currentMonth.year, currentMonth.monthNumber - 1, 1)
                     }) {
                         Icon(Icons.Default.ChevronLeft, "Bulan sebelumnya")
                     }
                     IconButton(onClick = {
-                        currentMonth = if (currentMonth.monthNumber == 12) LocalDate(currentMonth.year + 1, 1, 1) else LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
+                        currentMonth = if (currentMonth.monthNumber == 12)
+                            LocalDate(currentMonth.year + 1, 1, 1)
+                        else
+                            LocalDate(currentMonth.year, currentMonth.monthNumber + 1, 1)
                     }) {
                         Icon(Icons.Default.ChevronRight, "Bulan berikutnya")
                     }
@@ -117,19 +128,19 @@ fun CalendarScreen(navController: NavController) {
                 }
 
                 // Days
-                items(daysInMonth) { day ->
-                    val date = LocalDate(currentMonth.year, currentMonth.month, day + 1)
-                    val epochMillis = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-                    val isSelected = epochMillis / 86400000L == uiState.selectedDate / 86400000L
-                    val isToday = epochMillis / 86400000L == Clock.System.now().toEpochMilliseconds() / 86400000L
-                    val hasTask = uiState.taskDates.any { it / 86400000L == epochMillis / 86400000L }
+                items(daysInMonth) { index ->
+                    val day = index + 1
+                    val date = LocalDate(currentMonth.year, currentMonth.month, day)
+                    val isSelected = date == uiState.selectedDate
+                    val isToday = date == Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    val hasTask = uiState.taskDates.contains(date)
 
                     CalendarDayCell(
-                        dayOfMonth = day + 1,
+                        dayOfMonth = day,
                         isSelected = isSelected,
                         isToday = isToday,
                         hasTask = hasTask,
-                        onSelect = { viewModel.selectDate(epochMillis) }
+                        onSelect = { viewModel.selectDate(date) }
                     )
                 }
             }
@@ -138,8 +149,7 @@ fun CalendarScreen(navController: NavController) {
 
             // Tasks List
             Text(
-                text = "Tugas pada " + Instant.fromEpochMilliseconds(uiState.selectedDate)
-                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                text = "Tugas pada ${uiState.selectedDate}",
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(horizontal = Spacing.normal, vertical = Spacing.small),
                 fontWeight = FontWeight.Bold
@@ -153,7 +163,7 @@ fun CalendarScreen(navController: NavController) {
                 EmptyStateView(
                     message = "Tidak ada tugas untuk tanggal ini",
                     actionLabel = "Tambah Tugas",
-                    onAction = { navController.navigate(Screen.AddTask.createRoute(uiState.selectedDate.toString())) },
+                    onAction = { navController.navigate(Screen.AddTask.createRoute(uiState.selectedDate.atStartOfDayMillis().toString())) },
                     modifier = Modifier.weight(1f)
                 )
             } else {

@@ -1,19 +1,20 @@
 package com.studyhub.domain.repository
 
 import com.studyhub.domain.model.UserPreferences
+import kotlinx.coroutines.flow.Flow
 
 interface PreferencesRepository {
-    suspend fun getPreferences(): UserPreferences
-    suspend fun updateUserName(name: String)
-    suspend fun updateDarkMode(isDark: Boolean)
-    suspend fun updateFocusMode(enabled: Boolean)
-    suspend fun updateAiReminder(enabled: Boolean)
-    suspend fun updatePomodoroSettings(
-        focus: Int,
-        shortBreak: Int,
-        longBreak: Int,
-        sessionsBeforeLong: Int
+    val isDarkMode: Flow<Boolean>
+    val userName: Flow<String>
+    val userPreferences: Flow<UserPreferences>
+    val notificationEnabled: Flow<Boolean>
+    val isAiReminderEnabled: Flow<Boolean>
+
+    suspend fun setDarkMode(enabled: Boolean)
+    suspend fun setUserName(name: String)
+    suspend fun setNotificationEnabled(enabled: Boolean)
+    suspend fun setAiReminderEnabled(enabled: Boolean)
+    suspend fun setPomodoroSettings(
+        focus: Int, shortBreak: Int, longBreak: Int
     )
-    suspend fun updateDefaultView(view: String)
-    suspend fun updateNotification(enabled: Boolean)
 }

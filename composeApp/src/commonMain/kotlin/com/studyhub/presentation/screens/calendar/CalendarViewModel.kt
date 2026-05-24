@@ -2,6 +2,7 @@ package com.studyhub.presentation.screens.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.studyhub.core.util.toLocalDate
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
@@ -11,13 +12,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 data class CalendarUiState(
-    val selectedDate: Long = Clock.System.now().toEpochMilliseconds(),
+    val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
     val tasksOnSelectedDate: List<Task> = emptyList(),
-    val taskDates: Set<Long> = emptySet(),
+    val taskDates: Set<LocalDate> = emptySet(),
     val isLoading: Boolean = false
 )
 
@@ -33,7 +35,7 @@ class CalendarViewModel(
         viewModelScope.launch {
             try {
                 val tasks = getAllTasksUseCase()
-                val dates = tasks.map { it.dueDate / 86_400_000L * 86_400_000L }.toSet()
+                val dates = tasks.map { it.dueDate.toLocalDate() }.toSet()
                 _uiState.update { it.copy(taskDates = dates) }
             } catch (e: Exception) {
                 // Handle error if needed
@@ -41,7 +43,7 @@ class CalendarViewModel(
         }
     }
 
-    fun selectDate(date: Long) {
+    fun selectDate(date: LocalDate) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, selectedDate = date) }
             try {
