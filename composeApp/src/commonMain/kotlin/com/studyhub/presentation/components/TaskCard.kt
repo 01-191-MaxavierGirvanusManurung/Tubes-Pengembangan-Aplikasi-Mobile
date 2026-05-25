@@ -34,12 +34,20 @@ fun TaskCard(
     val statusIcon = when (task.status) {
         TaskStatus.DONE -> Icons.Default.CheckCircle
         TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-        TaskStatus.TODO -> Icons.Default.Info
+        TaskStatus.TODO -> Icons.Default.ErrorOutline
     }
     val statusColor = when (task.status) {
-        TaskStatus.DONE -> PriorityLow
-        TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
-        TaskStatus.TODO -> MaterialTheme.colorScheme.outline
+        TaskStatus.DONE -> Color(0xFF10B981)
+        TaskStatus.IN_PROGRESS -> Color(0xFF3B82F6)
+        TaskStatus.TODO -> Color(0xFF9CA3AF)
+    }
+    
+    val subjectColor = when (task.subject.lowercase()) {
+        "mathematics", "calculus" -> Color(0xFF9C7C50)
+        "chemistry" -> Color(0xFF10B981)
+        "physics" -> Color(0xFF3B82F6)
+        "history" -> Color(0xFFF59E0B)
+        else -> Color(0xFF9C7C50) // Default brown-ish
     }
 
     Card(
@@ -49,52 +57,76 @@ fun TaskCard(
         shape = RoundedCornerShape(18.dp)
     ) {
         Row(
-            modifier = Modifier
-                .padding(vertical = 16.dp, horizontal = 18.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = statusIcon,
-                contentDescription = null,
-                tint = statusColor,
-                modifier = Modifier.size(24.dp)
+            // Left Strip
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp))
+                    .background(subjectColor)
             )
             
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp) // Secondary internal gap
-            ) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.wrapContentWidth()
-                ) {
-                    TaskTag(task.subject, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
-                    TaskTag(task.priority.name.lowercase(), getPriorityColor(task.priority), Color.White)
-                    TaskTag(formatDeadline(task.dueDate), Color(0xFFFEF3C7), Color(0xFF92400E))
-                    TaskTag("~${task.estimatedMinutes}m", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .padding(vertical = 16.dp, horizontal = 14.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = statusIcon,
+                    contentDescription = null,
+                    tint = statusColor,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        TaskTag(task.subject, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
+                        TaskTag(task.priority.name.lowercase(), getPriorityColor(task.priority), Color.White)
+                        
+                        Text(
+                            formatDeadline(task.dueDate),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFF59E0B),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "~${task.estimatedMinutes}m",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                    }
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }
@@ -111,12 +143,20 @@ fun TaskGridCard(
     val statusIcon = when (task.status) {
         TaskStatus.DONE -> Icons.Default.CheckCircle
         TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-        TaskStatus.TODO -> Icons.Default.Info
+        TaskStatus.TODO -> Icons.Default.ErrorOutline
     }
     val statusColor = when (task.status) {
-        TaskStatus.DONE -> PriorityLow
-        TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
-        TaskStatus.TODO -> MaterialTheme.colorScheme.outline
+        TaskStatus.DONE -> Color(0xFF10B981)
+        TaskStatus.IN_PROGRESS -> Color(0xFF3B82F6)
+        TaskStatus.TODO -> Color(0xFF9CA3AF)
+    }
+    
+    val subjectColor = when (task.subject.lowercase()) {
+        "mathematics", "calculus" -> Color(0xFF9C7C50)
+        "chemistry" -> Color(0xFF10B981)
+        "physics" -> Color(0xFF3B82F6)
+        "history" -> Color(0xFFF59E0B)
+        else -> Color(0xFF9C7C50) // Default brown-ish
     }
 
     Card(
@@ -164,7 +204,7 @@ fun TaskGridCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.wrapContentHeight().defaultMinSize(minHeight = 40.dp)
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -182,7 +222,7 @@ fun TaskGridCard(
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

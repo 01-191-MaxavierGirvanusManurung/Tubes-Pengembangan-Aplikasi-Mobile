@@ -12,10 +12,12 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 
 @Composable
-fun StudyHubBottomBar(navController: NavController, currentRoute: String?) {
+fun StudyHubBottomBar(
+    currentRoute: String?,
+    onItemSelected: (Screen) -> Unit
+) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp
@@ -31,12 +33,7 @@ fun StudyHubBottomBar(navController: NavController, currentRoute: String?) {
             val selected = currentRoute == screen.route
             NavigationBarItem(
                 selected = selected,
-                onClick = {
-                    navController.navigate(screen.route) {
-                        launchSingleTop = true
-                        popUpTo(Screen.Home.route)
-                    }
-                },
+                onClick = { onItemSelected(screen) },
                 icon = {
                     Icon(if (selected) filledIcon else outlineIcon, label)
                 },

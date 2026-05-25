@@ -16,10 +16,10 @@ import com.studyhub.data.local.PreferencesDataSource
 import com.studyhub.domain.repository.PreferencesRepository
 import com.studyhub.data.repository.PreferencesRepositoryImpl
 import com.studyhub.presentation.theme.ThemeViewModel
-import com.studyhub.presentation.screens.add_task.AddTaskViewModel
 import com.studyhub.presentation.screens.home.HomeViewModel
 import com.studyhub.presentation.screens.task.TasksViewModel
 import com.studyhub.presentation.screens.task.AddEditTaskViewModel
+import com.studyhub.presentation.screens.task.TaskDetailViewModel
 import com.studyhub.presentation.screens.calendar.CalendarViewModel
 import com.studyhub.presentation.screens.profile.ProfileViewModel
 import org.koin.core.module.Module
@@ -78,10 +78,10 @@ val useCaseModule = module {
 // ==================== VIEWMODEL MODULE ====================
 
 val viewModelModule = module {
-    viewModelOf(::AddTaskViewModel)
     viewModelOf(::HomeViewModel)
     viewModelOf(::TasksViewModel)
     viewModelOf(::AddEditTaskViewModel)
+    viewModelOf(::TaskDetailViewModel)
     viewModelOf(::CalendarViewModel)
     viewModelOf(::ProfileViewModel)
     viewModelOf(::ThemeViewModel)

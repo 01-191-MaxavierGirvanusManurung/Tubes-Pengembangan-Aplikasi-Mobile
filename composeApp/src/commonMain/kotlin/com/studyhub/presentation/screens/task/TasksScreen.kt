@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.core.util.SystemAppearance
 import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.TaskGridCard
@@ -46,6 +47,9 @@ fun TasksScreen(navController: NavController) {
     // Bottom Sheet State
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
+
+    // Force light icons (white) because header is dark
+    SystemAppearance(isDarkMode = true)
 
     LaunchedEffect(Unit) { viewModel.loadTasks() }
 
@@ -72,13 +76,14 @@ fun TasksScreen(navController: NavController) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                     .background(
                         Brush.verticalGradient(
                             listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
                         )
                     )
-                    .padding(top = 16.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                    .statusBarsPadding()
+                    .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 28.dp)
             ) {
                 Column {
                     Row(
@@ -89,13 +94,13 @@ fun TasksScreen(navController: NavController) {
                         Column {
                             Text(
                                 "My Tasks",
-                                style = MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 "${uiState.filteredTasks.size} tasks found",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
                                 color = Color.White.copy(alpha = 0.8f)
                             )
                         }
@@ -144,6 +149,8 @@ fun TasksScreen(navController: NavController) {
                         placeholder = { Text("Search tasks or subjects...", color = Color.Gray) },
                         leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
                         colors = TextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
                             focusedContainerColor = Color.White.copy(alpha = 0.9f),
                             unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
                             disabledContainerColor = Color.White.copy(alpha = 0.9f),
@@ -172,7 +179,7 @@ fun TasksScreen(navController: NavController) {
                             FilterChip(
                                 selected = uiState.filterStatus == null,
                                 onClick = { viewModel.setFilter(null, uiState.filterPriority, uiState.filterSubject) },
-                                label = { 
+                                label = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text("All", fontSize = 12.sp)
                                         Spacer(Modifier.width(4.dp))
@@ -181,7 +188,7 @@ fun TasksScreen(navController: NavController) {
                                             shape = CircleShape
                                         ) {
                                             Text(
-                                                allCount.toString(), 
+                                                allCount.toString(),
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold
@@ -201,7 +208,7 @@ fun TasksScreen(navController: NavController) {
                             FilterChip(
                                 selected = uiState.filterStatus == status,
                                 onClick = { viewModel.setFilter(status, uiState.filterPriority, uiState.filterSubject) },
-                                label = { 
+                                label = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(status.value.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp)
                                         Spacer(Modifier.width(4.dp))
@@ -234,8 +241,8 @@ fun TasksScreen(navController: NavController) {
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Text(
-                                    "All Priority", 
-                                    style = MaterialTheme.typography.labelMedium, 
+                                    "All Priority",
+                                    style = MaterialTheme.typography.labelMedium,
                                     color = if (uiState.filterPriority == null) MaterialTheme.colorScheme.primary else Color.Gray
                                 )
                             }
@@ -271,9 +278,9 @@ fun TasksScreen(navController: NavController) {
                     EmptyStateView(
                         message = "No tasks found",
                         actionLabel = "Add New Task",
-                        onAction = { 
+                        onAction = {
                             editingTaskId = null
-                            showAddBottomSheet = true 
+                            showAddBottomSheet = true
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -291,9 +298,9 @@ fun TasksScreen(navController: NavController) {
                             ) { task ->
                                 TaskCard(
                                     task = task,
-                                    onEdit = { 
+                                    onEdit = {
                                         editingTaskId = task.id
-                                        showAddBottomSheet = true 
+                                        showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
                                     modifier = Modifier.animateItem(
@@ -319,9 +326,9 @@ fun TasksScreen(navController: NavController) {
                             ) { task ->
                                 TaskGridCard(
                                     task = task,
-                                    onEdit = { 
+                                    onEdit = {
                                         editingTaskId = task.id
-                                        showAddBottomSheet = true 
+                                        showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
                                     modifier = Modifier.animateItem(

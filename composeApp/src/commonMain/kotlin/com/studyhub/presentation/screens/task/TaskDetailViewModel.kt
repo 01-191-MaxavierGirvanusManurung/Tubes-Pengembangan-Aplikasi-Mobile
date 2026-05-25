@@ -1,4 +1,4 @@
-package com.studyhub.presentation.screens.task_detail
+package com.studyhub.presentation.screens.task
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

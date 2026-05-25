@@ -11,8 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.core.util.SystemAppearance
 import com.studyhub.presentation.components.*
 import com.studyhub.presentation.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
@@ -22,9 +24,13 @@ fun ProfileScreen(navController: NavController) {
     val viewModel: ProfileViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Force light icons (white) because header is dark
+    SystemAppearance(isDarkMode = true)
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = Spacing.large)
+        modifier = Modifier
+            .fillMaxSize(),
+        contentPadding = PaddingValues(bottom = Spacing.large + 80.dp)
     ) {
         // ── Header ──
         item {
