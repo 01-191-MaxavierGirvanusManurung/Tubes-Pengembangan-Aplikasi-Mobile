@@ -1,7 +1,6 @@
 package com.studyhub.presentation.screens.task
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,31 +10,34 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.core.util.SystemAppearance
+import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.core.util.SystemAppearance
 import com.studyhub.presentation.components.EmptyStateView
+import com.studyhub.presentation.components.GlassIconButton
+import com.studyhub.presentation.components.LiquidGlassCard
+import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.TaskGridCard
 import com.studyhub.presentation.navigation.Screen
-import com.studyhub.presentation.theme.Spacing
+import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,14 +46,10 @@ fun TasksScreen(navController: NavController) {
     val viewModel: TasksViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // Bottom Sheet State
+    val listState = rememberLazyListState()
+
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
-
-    // Force light icons (white) because header is dark
-    SystemAppearance(isDarkMode = true)
-
-    LaunchedEffect(Unit) { viewModel.loadTasks() }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -61,209 +59,133 @@ fun TasksScreen(navController: NavController) {
                     editingTaskId = null
                     showAddBottomSheet = true 
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFF5F5E5A),
                 contentColor = Color.White,
-                shape = CircleShape
+                shape = CircleShape,
+                modifier = Modifier.size(48.dp),
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
                 Icon(Icons.Default.Add, "Tambah tugas")
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize()
+        Box(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
         ) {
             // Header Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
-                        )
+            StudyHubHeader(
+                title = "My Tasks",
+                subtitle = {
+                    Text("${uiState.filteredTasks.size} tasks found", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                actions = {
+                    GlassIconButton(
+                        icon = if (uiState.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
+                        onClick = { viewModel.toggleViewMode() }
                     )
-                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-                    .statusBarsPadding()
-                    .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 28.dp)
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                },
+                content = {
+                    // Glass Search Bar
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
                     ) {
-                        Column {
-                            Text(
-                                "My Tasks",
-                                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "${uiState.filteredTasks.size} tasks found",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                        
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledIconButton(
-                                onClick = { viewModel.toggleViewMode() },
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = Color.White.copy(alpha = 0.2f),
-                                    contentColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (uiState.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
-                                    contentDescription = "Switch View"
-                                )
-                            }
-                            
-                            FilledIconButton(
-                                onClick = { 
-                                    editingTaskId = null
-                                    showAddBottomSheet = true 
-                                },
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = Color.White.copy(alpha = 0.2f),
-                                    contentColor = Color.White
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(Icons.Default.Add, "Add")
-                            }
-                        }
+                        TextField(
+                            value = uiState.searchQuery,
+                            onValueChange = viewModel::setSearchQuery,
+                            modifier = Modifier.fillMaxSize(),
+                            placeholder = { 
+                                Text("Search tasks or subjects...", color = Color.White.copy(alpha = 0.60f), fontSize = 14.sp) 
+                            },
+                            leadingIcon = { 
+                                Icon(Icons.Default.Search, null, tint = Color.White.copy(alpha = 0.8f)) 
+                            },
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
+                            singleLine = true
+                        )
                     }
-                    
-                    Spacer(Modifier.height(16.dp))
-                    
-                    // Search Bar
-                    TextField(
-                        value = uiState.searchQuery,
-                        onValueChange = viewModel::setSearchQuery,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(16.dp)),
-                        placeholder = { Text("Search tasks or subjects...", color = Color.Gray) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.Gray) },
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White.copy(alpha = 0.9f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.9f),
-                            disabledContainerColor = Color.White.copy(alpha = 0.9f),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                        ),
-                        singleLine = true
-                    )
                 }
-            }
+            )
 
             // Body Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = padding.calculateBottomPadding())
+                    .padding(top = 160.dp) 
             ) {
                 // Filters Section
                 Column(modifier = Modifier.padding(top = 16.dp)) {
+                    // Status Tabs
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(horizontal = 20.dp),
                     ) {
                         item {
-                            val allCount = uiState.taskCounts["all"] ?: 0
-                            FilterChip(
+                            FilterTab(
                                 selected = uiState.filterStatus == null,
                                 onClick = { viewModel.setFilter(null, uiState.filterPriority, uiState.filterSubject) },
-                                label = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("All", fontSize = 12.sp)
-                                        Spacer(Modifier.width(4.dp))
-                                        Surface(
-                                            color = if (uiState.filterStatus == null) Color.White.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant,
-                                            shape = CircleShape
-                                        ) {
-                                            Text(
-                                                allCount.toString(),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = Color.White
-                                )
+                                label = "All",
+                                count = uiState.taskCounts["all"] ?: 0
                             )
                         }
                         items(TaskStatus.entries) { status ->
-                            val count = uiState.taskCounts[status.value] ?: 0
-                            FilterChip(
+                            FilterTab(
                                 selected = uiState.filterStatus == status,
                                 onClick = { viewModel.setFilter(status, uiState.filterPriority, uiState.filterSubject) },
-                                label = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(status.value.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 12.sp)
-                                        Spacer(Modifier.width(4.dp))
-                                        Surface(
-                                            color = if (uiState.filterStatus == status) Color.White.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant,
-                                            shape = CircleShape
-                                        ) {
-                                            Text(
-                                                count.toString(), 
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                },
-                                shape = RoundedCornerShape(16.dp)
+                                label = status.value.replace("_", " ").capitalizeFirst(),
+                                count = uiState.taskCounts[status.value] ?: 0
                             )
                         }
                     }
-                    
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Priority Chips
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        item {
-                            TextButton(
-                                onClick = { viewModel.setFilter(uiState.filterStatus, null, uiState.filterSubject) },
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text(
-                                    "All Priority",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = if (uiState.filterPriority == null) MaterialTheme.colorScheme.primary else Color.Gray
-                                )
-                            }
-                        }
-                        items(Priority.entries) { priority ->
-                            TextButton(
+                        PriorityChip(
+                            selected = uiState.filterPriority == null,
+                            onClick = { viewModel.setFilter(uiState.filterStatus, null, uiState.filterSubject) },
+                            label = "All Priority"
+                        )
+                        Priority.entries.forEach { priority ->
+                            PriorityChip(
+                                selected = uiState.filterPriority == priority,
                                 onClick = { viewModel.setFilter(uiState.filterStatus, priority, uiState.filterSubject) },
-                                contentPadding = PaddingValues(0.dp)
-                            ) {
-                                Text(
-                                    priority.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    color = if (uiState.filterPriority == priority) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    fontSize = 12.sp
-                                )
-                            }
+                                label = priority.name.capitalizeFirst()
+                            )
                         }
-                        item {
-                            Spacer(Modifier.width(16.dp))
-                            TextButton(onClick = { /* Sort Dialog */ }) {
-                                Text("Sort", fontSize = 12.sp, color = Color.Gray)
-                                Icon(Icons.Default.KeyboardArrowDown, null, Modifier.size(16.dp), tint = Color.Gray)
+                        
+                        Spacer(Modifier.weight(1f))
+                        
+                        Surface(
+                            onClick = { /* Sort */ },
+                            shape = CircleShape,
+                            color = Color.White,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0D8CE))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.SwapVert, null, modifier = Modifier.size(16.dp), tint = MutedText)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Sort", style = MaterialTheme.typography.labelSmall, color = MutedText)
+                                Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(16.dp), tint = MutedText)
                             }
                         }
                     }
@@ -287,7 +209,8 @@ fun TasksScreen(navController: NavController) {
                 } else {
                     if (uiState.viewMode == ViewMode.LIST) {
                         LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
+                            state = listState,
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
@@ -303,18 +226,14 @@ fun TasksScreen(navController: NavController) {
                                         showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                    modifier = Modifier.animateItem(
-                                        fadeInSpec = tween(250),
-                                        fadeOutSpec = tween(250),
-                                        placementSpec = tween(250)
-                                    )
+                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
                                 )
                             }
                         }
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(16.dp),
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp, start = 20.dp, end = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
@@ -331,11 +250,7 @@ fun TasksScreen(navController: NavController) {
                                         showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                    modifier = Modifier.animateItem(
-                                        fadeInSpec = tween(250),
-                                        fadeOutSpec = tween(250),
-                                        placementSpec = tween(250)
-                                    )
+                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
                                 )
                             }
                         }
@@ -370,11 +285,67 @@ fun TasksScreen(navController: NavController) {
         AddEditTaskBottomSheet(
             taskId = editingTaskId,
             initialDate = null,
-            onDismiss = { showAddBottomSheet = false },
+            onDismiss = { 
+                showAddBottomSheet = false
+                editingTaskId = null
+            },
             onSuccess = {
                 showAddBottomSheet = false
-                viewModel.loadTasks()
+                editingTaskId = null
             }
+        )
+    }
+}
+
+@Composable
+fun FilterTab(selected: Boolean, onClick: () -> Unit, label: String, count: Int) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) Color(0xFF5F5E5A) else Color.White,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFE0D8CE))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                color = if (selected) Color.White else Color(0xFF888888),
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                color = if (selected) Color.White.copy(alpha = 0.25f) else Color(0xFFF2EDE4),
+                shape = CircleShape
+            ) {
+                Text(
+                    count.toString(),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = if (selected) Color.White else Color(0xFF888888),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PriorityChip(selected: Boolean, onClick: () -> Unit, label: String) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) Color(0xFF5F5E5A) else Color.White,
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0D8CE))
+    ) {
+        Text(
+            label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (selected) Color.White else Color(0xFF888888),
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun CalendarDayCell(
@@ -27,11 +28,11 @@ fun CalendarDayCell(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(2.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(CircleShape)
             .background(
                 when {
-                    isSelected -> MaterialTheme.colorScheme.primary
-                    isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    isToday -> Color(0xFF8B7040)
+                    isSelected -> Color(0xFFE8E0D4)
                     else -> Color.Transparent
                 }
             )
@@ -42,21 +43,21 @@ fun CalendarDayCell(
             Text(
                 dayOfMonth.toString(),
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
+                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 12.sp
                 ),
                 color = when {
-                    isSelected -> Color.White
-                    isToday -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurface
+                    isToday -> Color.White
+                    else -> Color(0xFF2C2416)
                 }
             )
-            if (hasTask && !isSelected) {
+            if (hasTask) {
                 Box(
                     Modifier
                         .padding(top = 2.dp)
                         .size(4.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(if (isToday) Color.White else Color(0xFF8B7040))
                 )
             }
         }

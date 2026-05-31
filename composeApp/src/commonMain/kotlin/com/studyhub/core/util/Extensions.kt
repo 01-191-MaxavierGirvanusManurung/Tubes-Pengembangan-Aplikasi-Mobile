@@ -23,6 +23,13 @@ fun Long.toLocalDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): Loca
     return Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone).date
 }
 
+fun Long.toLocalMillisFromUtc(timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
+    // DatePicker returns UTC millis. We convert it to LocalDate in UTC, 
+    // then back to start of day millis in our local timezone.
+    val utcDate = Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.UTC).date
+    return utcDate.atStartOfDayMillis(timeZone)
+}
+
 fun Instant.formatToDisplay(): String {
     val dateTime = this.toLocalDateTime(TimeZone.currentSystemDefault())
     return "${dateTime.dayOfMonth}/${dateTime.monthNumber}/${dateTime.year} " +

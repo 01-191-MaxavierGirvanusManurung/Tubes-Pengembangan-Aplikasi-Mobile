@@ -1,10 +1,10 @@
 package com.studyhub.presentation.screens.home
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,8 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,11 +27,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.core.util.SystemAppearance
+import com.studyhub.presentation.components.GlassIconButton
+import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.TaskCard
+import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.screens.home.components.FocusTimerBottomSheet
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
-import com.studyhub.presentation.theme.Spacing
+import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,103 +43,303 @@ fun HomeScreen(navController: NavController) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val scrollState = rememberLazyListState()
+
     var showFocusTimer by remember { mutableStateOf(false) }
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
 
-    // Force light icons (white) because header is dark
-    SystemAppearance(isDarkMode = true)
-
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor = MaterialTheme.colorScheme.background, // Consistent with other screens
-    ) { _ ->
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = Spacing.normal + 80.dp), // Account for bottom bar
-            verticalArrangement = Arrangement.spacedBy(Spacing.normal)
+            state = scrollState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header Section (Dark themed to match Tasks/Calendar)
+            // Header Section
             item {
-                HomeHeader(
-                    userName = uiState.userName,
-                    taskCount = uiState.todayTasksCount,
-                    onAddTaskClick = {
-                        editingTaskId = null
-                        showAddBottomSheet = true
+                StudyHubHeader(
+                    title = "Good morning, ${uiState.userName}! 👋",
+                    dateText = "Sunday, May 17",
+                    subtitle = {
+                        Row {
+                            Text("You have ", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+                            Text(
+                                "${uiState.todayTasksCount} tasks",
+                                color = HighlightGold,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Text(" to tackle today", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    actions = {
+                        GlassIconButton(
+                            icon = Icons.Outlined.Notifications,
+                            onClick = { /* Notifications */ },
+                            hasNotification = true
+                        )
+                    },
+                    content = {
+                        LiquidGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            borderAlpha = 0.3f
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // Canvas Progress Ring
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
+                                    Canvas(modifier = Modifier.fillMaxSize()) {
+                                        drawArc(
+                                            color = Color.White.copy(alpha = 0.15f),
+                                            startAngle = 0f,
+                                            sweepAngle = 360f,
+                                            useCenter = false,
+                                            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                        drawArc(
+                                            color = Color(0xFFFBBF24),
+                                            startAngle = -90f,
+                                            sweepAngle = (uiState.completionPercentage / 100f) * 360f,
+                                            useCenter = false,
+                                            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                        )
+                                    }
+                                    Text(
+                                        "${uiState.completionPercentage}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                                
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Overall Progress",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    LinearProgressIndicator(
+                                        progress = { uiState.completionPercentage / 100f },
+                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                        color = Color(0xFFFBBF24),
+                                        trackColor = Color.White.copy(alpha = 0.2f)
+                                    )
+                                    Text(
+                                        "${uiState.doneTasks} of ${uiState.totalTasks} tasks completed",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
                     }
                 )
             }
 
+            // Stat Cards Row
             item {
-                Column(
-                    modifier = Modifier.padding(horizontal = Spacing.normal),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.normal)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Overall Progress Card
-                    ProgressCard(
-                        percentage = uiState.completionPercentage,
-                        done = uiState.doneTasks,
-                        total = uiState.totalTasks
-                    )
+                    StatBox(Modifier.weight(1f), "Total", uiState.totalTasks.toString(), Icons.Default.Book, Color(0xFFF1EBE0), Color(0xFF8B7355))
+                    StatBox(Modifier.weight(1f), "Done", uiState.doneTasks.toString(), Icons.Default.CheckCircle, Color(0xFFE1F5EE), Color(0xFF10B981))
+                    StatBox(Modifier.weight(1f), "Active", uiState.activeTasks.toString(), Icons.Default.Schedule, Color(0xFFE6F1FB), Color(0xFF3B82F6))
+                    StatBox(Modifier.weight(1f), "Due Today", uiState.dueTodayTasks.toString(), Icons.Default.Bolt, Color(0xFFFAEEDA), Color(0xFFFBBF24))
+                }
+            }
 
-                    // Stats Grid
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-                    ) {
-                        StatBox(Modifier.weight(1f), "Total", uiState.totalTasks.toString(), Icons.Default.Book, Color(0xFF7C5C29))
-                        StatBox(Modifier.weight(1f), "Done", uiState.doneTasks.toString(), Icons.Default.CheckCircle, Color(0xFF10B981))
-                        StatBox(Modifier.weight(1f), "Active", uiState.activeTasks.toString(), Icons.Default.Schedule, Color(0xFF3B82F6))
-                        StatBox(Modifier.weight(1f), "Due Today", uiState.dueTodayTasks.toString(), Icons.Default.Bolt, Color(0xFFF59E0B))
-                    }
-
-                    // Focus Session Button
+            // Start Focus Session Button
+            item {
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                     FocusSessionButton(
                         durationMins = uiState.pomodoroWorkDuration,
                         onClick = { showFocusTimer = true }
                     )
+                }
+            }
 
-                    // Upcoming Tasks Header
+            // Upcoming Tasks Section
+            item {
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = Spacing.medium),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             "Upcoming Tasks",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                             fontWeight = FontWeight.Bold
                         )
                         TextButton(onClick = { navController.navigate(Screen.Tasks.route) }) {
-                            Text("See all", color = Color(0xFF9C7C50))
+                            Text("See all", color = GoldenSuedeDark)
+                        }
+                    }
+                    
+                    if (uiState.upcomingTasks.isEmpty()) {
+                        Text(
+                            "No upcoming tasks today",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MutedText,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            uiState.upcomingTasks.forEach { task ->
+                                TaskCard(
+                                    task = task,
+                                    onEdit = { 
+                                        editingTaskId = task.id
+                                        showAddBottomSheet = true 
+                                    },
+                                    onDelete = { viewModel.deleteTask(task.id) },
+                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // Task List
-            if (uiState.upcomingTasks.isEmpty()) {
-                item {
-                    Text(
-                        "No upcoming tasks today",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal, vertical = 16.dp)
-                    )
-                }
-            } else {
-                items(uiState.upcomingTasks) { task ->
-                    Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
-                        TaskCard(
-                            task = task,
-                            onEdit = { 
-                                editingTaskId = task.id
-                                showAddBottomSheet = true 
-                            },
-                            onDelete = { viewModel.deleteTask(task.id) }
+            // Subject Progress Section
+            item {
+                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Subject Progress",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = DarkText
                         )
+                        TextButton(onClick = { /* Analytics */ }) {
+                            Text("Analytics", color = GoldenSuedeDark, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(8.dp))
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E0D4))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            uiState.subjectStats.forEach { stat ->
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Box(
+                                        Modifier
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(stat.color)
+                                    )
+                                    Text(
+                                        stat.name, 
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        modifier = Modifier.width(80.dp),
+                                        color = DarkText
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = { stat.completionRate / 100f },
+                                        modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
+                                        color = stat.color,
+                                        trackColor = Color(0xFFF2EDE4)
+                                    )
+                                    Text(
+                                        "${stat.doneCount}/${stat.totalCount}", 
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = DarkText
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // AI Study Tip Card
+            item {
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8F0)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF5D8C0))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF1EBE0)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Bolt, null, tint = Color(0xFF854F0B))
+                                }
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column {
+                                Text(
+                                    "AI Study Tip", 
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF854F0B),
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    "You have 2 high priority tasks due tomorrow. Consider starting with Chemistry Quiz Preparation.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFB8860B)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Streak Card
+            item {
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = HighlightGold.copy(alpha = 0.1f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = HighlightGold.copy(alpha = 0.2f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("🔥", fontSize = 20.sp)
+                                }
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("7-Day Study Streak!", fontWeight = FontWeight.Bold, color = GoldenSuedeDark)
+                                Text("Keep it up — you're on a roll!", style = MaterialTheme.typography.bodySmall, color = GoldenSuedeDark.copy(alpha = 0.8f))
+                            }
+                            Icon(Icons.Default.AutoGraph, null, tint = Color(0xFFE85D35))
+                        }
                     }
                 }
             }
@@ -149,169 +355,77 @@ fun HomeScreen(navController: NavController) {
         )
     }
 
-    // Bottom Sheet for Add/Edit (Same as TasksScreen)
     if (showAddBottomSheet) {
         AddEditTaskBottomSheet(
             taskId = editingTaskId,
             initialDate = null,
-            onDismiss = { showAddBottomSheet = false },
+            onDismiss = { 
+                showAddBottomSheet = false
+                editingTaskId = null
+            },
             onSuccess = {
                 showAddBottomSheet = false
-                viewModel.loadData()
+                editingTaskId = null
             }
         )
     }
 }
 
 @Composable
-fun HomeHeader(userName: String, taskCount: Int, onAddTaskClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f))
-                )
-            )
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-            .statusBarsPadding()
-            .padding(top = 28.dp, start = 20.dp, end = 20.dp, bottom = 28.dp) // Adjusted padding
-    ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "Good morning,\n$userName! 👋",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 32.sp
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "You have $taskCount tasks today",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp),
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                }
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledIconButton(
-                        onClick = { /* Notifications */ },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.2f),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(Icons.Outlined.Notifications, "Notifications", modifier = Modifier.size(22.dp))
-                    }
-                    
-                    FilledIconButton(
-                        onClick = { 
-                            onAddTaskClick()
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = Color.White.copy(alpha = 0.2f),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(Icons.Default.Add, "Add", modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProgressCard(percentage: Int, done: Int, total: Int) {
+fun StatBox(modifier: Modifier, label: String, value: String, icon: ImageVector, bgColor: Color, iconColor: Color) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { percentage / 100f },
-                    modifier = Modifier.size(64.dp),
-                    color = Color(0xFFF59E0B),
-                    trackColor = Color(0xFFFDE68A),
-                    strokeWidth = 6.dp,
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Text("$percentage%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Overall Progress", fontWeight = FontWeight.Bold)
-                LinearProgressIndicator(
-                    progress = { percentage / 100f },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),
-                    color = Color(0xFFF59E0B),
-                    trackColor = Color(0xFFFDE68A)
-                )
-                Text("$done of $total tasks completed", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            }
-        }
-    }
-}
-
-@Composable
-fun StatBox(modifier: Modifier, label: String, value: String, icon: ImageVector, color: Color) {
-    Card(
-        modifier = modifier.height(110.dp),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E0D4))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp).fillMaxSize(),
+            modifier = Modifier.padding(10.dp).fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(32.dp),
                 shape = RoundedCornerShape(10.dp),
-                color = color.copy(alpha = 0.1f)
+                color = bgColor
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+                    Icon(icon, null, tint = iconColor, modifier = Modifier.size(18.dp))
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                value, 
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), 
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2C2416)
+            )
+            Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color(0xFF888888))
         }
     }
 }
 
 @Composable
 fun FocusSessionButton(durationMins: Int, onClick: () -> Unit) {
-    Card(
+    Surface(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(84.dp)
-            .clickable(onClick = onClick),
+            .height(68.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(20.dp),
+                spotColor = Color(0xFFE85D35),
+                ambientColor = Color(0xFFE85D35)
+            ),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        color = Color.Transparent
     ) {
         Box(
             modifier = Modifier.fillMaxSize().background(
                 brush = Brush.horizontalGradient(
-                    colors = listOf(Color(0xFFFF8570), Color(0xFFFFB070))
+                    colors = listOf(Color(0xFFFF6B4A), Color(0xFFE85D35))
                 )
             )
         ) {
@@ -321,17 +435,17 @@ fun FocusSessionButton(durationMins: Int, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color.White.copy(alpha = 0.2f)
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.25f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Timer, null, tint = Color.White)
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Start Focus Session", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("Pomodoro • $durationMins min work", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    Text("Start Focus Session", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Pomodoro • $durationMins min work", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
                 }
                 Icon(Icons.Default.ChevronRight, null, tint = Color.White)
             }
