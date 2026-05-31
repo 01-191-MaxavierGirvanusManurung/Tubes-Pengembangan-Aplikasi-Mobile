@@ -5,12 +5,17 @@ import com.studyhub.data.local.DatabaseDriverFactory
 import com.studyhub.database.StudyHubDatabase
 import com.studyhub.data.local.LocalSubjectDataSource
 import com.studyhub.data.local.LocalTaskDataSource
+import com.studyhub.data.local.AiCacheDataSource
+import com.studyhub.data.remote.GroqApiClient
 import com.studyhub.data.repository.SubjectRepositoryImpl
 import com.studyhub.data.repository.TaskRepositoryImpl
+import com.studyhub.data.repository.AiRepositoryImpl
 import com.studyhub.domain.repository.SubjectRepository
 import com.studyhub.domain.repository.TaskRepository
+import com.studyhub.domain.repository.AiRepository
 import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
+import com.studyhub.domain.usecase.ai.*
 import com.studyhub.domain.usecase.preferences.*
 import com.studyhub.data.local.PreferencesDataSource
 import com.studyhub.domain.repository.PreferencesRepository
@@ -32,6 +37,7 @@ import org.koin.core.context.startKoin
 
 val networkModule = module {
     single { createHttpClient() }
+    single { GroqApiClient(get()) }
 }
 
 // ==================== DATABASE MODULE ====================
@@ -40,6 +46,7 @@ val databaseModule = module {
     single { StudyHubDatabase(get<DatabaseDriverFactory>().createDriver()) }
     single { LocalTaskDataSource(get()) }
     single { LocalSubjectDataSource(get()) }
+    single { AiCacheDataSource(get()) }
 }
 
 // ==================== PREFERENCES MODULE ====================
@@ -54,6 +61,7 @@ val repositoryModule = module {
     single<TaskRepository> { TaskRepositoryImpl(get()) }
     single<SubjectRepository> { SubjectRepositoryImpl(get()) }
     single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
+    single<AiRepository> { AiRepositoryImpl(get(), get()) }
 }
 
 // ==================== USE CASE MODULE ====================
@@ -73,6 +81,11 @@ val useCaseModule = module {
     factory { GetDarkModeUseCase(get()) }
     factory { SetDarkModeUseCase(get()) }
     factory { GetUserPreferencesUseCase(get()) }
+    
+    // AI Use Cases
+    factory { GetSmartPriorityUseCase(get(), get()) }
+    factory { GetSmartReminderUseCase(get(), get()) }
+    factory { GetAiUsageStatsUseCase(get()) }
 }
 
 // ==================== VIEWMODEL MODULE ====================

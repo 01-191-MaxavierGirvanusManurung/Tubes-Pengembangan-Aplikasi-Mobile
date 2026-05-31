@@ -41,6 +41,12 @@ Berikut adalah fondasi teknis yang telah diimplementasikan dalam pengembangan sa
 - **Dependency Injection**: Konfigurasi modul Koin (`AppModule`) untuk manajemen dependensi yang efisien di seluruh platform.
 - **Multi-platform Theming**: Sistem tema Dark/Light mode yang adaptif secara native di Android dan iOS.
 
+### Sprint 3 — Advanced Features (Current Progress)
+- **AI Token Management Infrastructure**: Sistem manajemen token AI dengan kompresi data, caching (SQLDelight), dan pembatasan kuota harian untuk efisiensi biaya.
+- **Smart Priority & Reminder Logic**: Implementasi Repository dan Use Case untuk pengurutan tugas cerdas dan pengingat adaptif berbasis pola pengerjaan pengguna.
+- **Enhanced Task Visualization**: Indikator visual otomatis untuk tugas yang terlambat (*overdue*) dengan styling khusus (merah, strike-through) untuk meningkatkan kesadaran deadline.
+- **CI/CD Optimization**: Konfigurasi otomatisasi build GitHub Actions dan analisis kode statis menggunakan **Detekt**.
+
 ---
 
 ## ✨ Fitur Saat Ini

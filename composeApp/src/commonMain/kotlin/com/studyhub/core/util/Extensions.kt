@@ -1,6 +1,7 @@
 package com.studyhub.core.util
 
 import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -9,6 +10,8 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 // ==================== DATE/TIME EXTENSIONS ====================
+
+fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
 fun LocalDate.atStartOfDayMillis(timeZone: TimeZone = TimeZone.currentSystemDefault()): Long {
     return this.atStartOfDayIn(timeZone).toEpochMilliseconds()
