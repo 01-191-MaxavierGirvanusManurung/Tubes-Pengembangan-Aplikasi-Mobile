@@ -4,7 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -28,10 +30,10 @@ fun AppNavigation() {
     NavHost(
         navController = navController,
         startDestination = Screen.Main.route,
-        enterTransition = { 
+        enterTransition = {
             fadeIn(tween(250)) + slideInHorizontally(tween(250)) { 30 }
         },
-        exitTransition = { 
+        exitTransition = {
             fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { -30 }
         },
         popEnterTransition = {
@@ -82,6 +84,43 @@ fun AppNavigation() {
         composable(Screen.SmartPriority.route) {
             SmartPriorityScreen(navController)
         }
+
+        composable(Screen.Progress.route) {
+            ProgressScreen(navController)
+        }
+
+        composable(
+            route = Screen.Pomodoro.route,
+            arguments = listOf(
+                navArgument("taskId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            PomodoroScreen(
+                taskId = backStackEntry.arguments?.getString("taskId"),
+                navController = navController
+            )
+        }
+    }
+}
+
+@Composable
+fun ProgressScreen(navController: NavController) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Progress Screen — Sprint 3 P1")
+    }
+}
+
+@Composable
+fun PomodoroScreen(
+    taskId: String?,
+    navController: NavController
+) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Pomodoro Screen — Sprint 3 P1")
     }
 }
 

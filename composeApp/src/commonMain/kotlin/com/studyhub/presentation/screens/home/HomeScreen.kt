@@ -272,45 +272,50 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // AI Study Tip Card
+            // Smart Priority Shortcut
             item {
-                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { navController.navigate(Screen.SmartPriority.route) },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8F0)),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF5D8C0))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.normal),
+                    onClick = {
+                        navController.navigate(Screen.SmartPriority.route)
+                    },
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Row(
+                        modifier = Modifier.padding(Spacing.normal),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
                         ) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFFF1EBE0)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Bolt, null, tint = Color(0xFF854F0B))
-                                }
-                            }
-                            Spacer(Modifier.width(16.dp))
+                            Icon(
+                                Icons.Default.AutoAwesome, null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Column {
                                 Text(
-                                    "AI Study Tip", 
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF854F0B),
-                                    fontSize = 14.sp
+                                    "Smart Priority",
+                                    style = MaterialTheme.typography.titleSmall
                                 )
                                 Text(
-                                    "You have 2 high priority tasks due tomorrow. Consider starting with Chemistry Quiz Preparation.",
+                                    "AI akan urutkan tugasmu",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFB8860B)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
+                        Icon(
+                            Icons.Default.ChevronRight, null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

@@ -46,6 +46,7 @@ Berikut adalah fondasi teknis yang telah diimplementasikan dalam pengembangan sa
 - **Smart Priority & Reminder Logic**: Implementasi Repository dan Use Case untuk pengurutan tugas cerdas dan pengingat adaptif berbasis pola pengerjaan pengguna.
 - **Enhanced Task Visualization**: Indikator visual otomatis untuk tugas yang terlambat (*overdue*) dengan styling khusus (merah, strike-through) untuk meningkatkan kesadaran deadline.
 - **CI/CD Optimization**: Konfigurasi otomatisasi build GitHub Actions dan analisis kode statis menggunakan **Detekt**.
+- **Sprint 3 Navigation & UI**: Penambahan rute navigasi untuk fitur Smart Priority, Progress, dan Pomodoro, serta integrasi shortcut AI di beranda.
 
 ---
 
