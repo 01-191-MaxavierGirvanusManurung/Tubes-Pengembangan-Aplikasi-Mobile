@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import androidx.navigation.NavController
 import com.studyhub.core.util.SystemAppearance
 import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
+import com.studyhub.domain.model.SortBy
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.GlassIconButton
@@ -54,18 +56,35 @@ fun TasksScreen(navController: NavController) {
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { 
-                    editingTaskId = null
-                    showAddBottomSheet = true 
-                },
-                containerColor = Color(0xFF5F5E5A),
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier.size(48.dp),
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(Icons.Default.Add, "Tambah tugas")
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        navController.navigate(Screen.SmartPriority.route)
+                    },
+                    icon = {
+                        Icon(Icons.Default.AutoAwesome, null)
+                    },
+                    text = { Text("AI Priority") },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    expanded = !listState.isScrollInProgress
+                )
+
+                FloatingActionButton(
+                    onClick = { 
+                        editingTaskId = null
+                        showAddBottomSheet = true 
+                    },
+                    containerColor = Color(0xFF5F5E5A),
+                    contentColor = Color.White,
+                    shape = CircleShape,
+                    modifier = Modifier.size(48.dp),
+                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                ) {
+                    Icon(Icons.Default.Add, "Tambah tugas")
+                }
             }
         }
     ) { padding ->
@@ -153,7 +172,38 @@ fun TasksScreen(navController: NavController) {
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    // Subject filter row
+                    if (uiState.availableSubjects.isNotEmpty()) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.small),
+                            contentPadding = PaddingValues(horizontal = Spacing.normal),
+                            modifier = Modifier.padding(vertical = Spacing.extraSmall)
+                        ) {
+                            item {
+                                FilterChip(
+                                    selected = uiState.filterSubject == null,
+                                    onClick = { viewModel.setSubjectFilter(null) },
+                                    label = { Text("Semua Matkul") },
+                                    shape = MaterialTheme.shapes.small
+                                )
+                            }
+                            items(uiState.availableSubjects) { subject ->
+                                FilterChip(
+                                    selected = uiState.filterSubject == subject,
+                                    onClick = {
+                                        viewModel.setSubjectFilter(
+                                            if (uiState.filterSubject == subject)
+                                                null else subject
+                                        )
+                                    },
+                                    label = { Text(subject) },
+                                    shape = MaterialTheme.shapes.small
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
 
                     // Priority Chips
                     Row(
@@ -173,24 +223,65 @@ fun TasksScreen(navController: NavController) {
                                 label = priority.name.capitalizeFirst()
                             )
                         }
-                        
-                        Spacer(Modifier.weight(1f))
-                        
-                        Surface(
-                            onClick = { /* Sort */ },
-                            shape = CircleShape,
-                            color = Color.White,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0D8CE))
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Sort + Show Completed row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.normal),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Sort dropdown
+                        var showSortMenu by remember { mutableStateOf(false) }
+                        TextButton(
+                            onClick = { showSortMenu = true }
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Icon(Icons.Default.Sort, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Urutkan: ${uiState.sortBy.name.lowercase().replace("_", " ").capitalizeFirst()}",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
                             ) {
-                                Icon(Icons.Default.SwapVert, null, modifier = Modifier.size(16.dp), tint = MutedText)
-                                Spacer(Modifier.width(4.dp))
-                                Text("Sort", style = MaterialTheme.typography.labelSmall, color = MutedText)
-                                Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(16.dp), tint = MutedText)
+                                SortBy.entries.forEach { sort ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(sort.name.lowercase().replace("_", " ").capitalizeFirst())
+                                        },
+                                        onClick = {
+                                            viewModel.setSortBy(sort)
+                                            showSortMenu = false
+                                        },
+                                        leadingIcon = {
+                                            if (uiState.sortBy == sort)
+                                                Icon(Icons.Default.Check, null,
+                                                    Modifier.size(16.dp))
+                                        }
+                                    )
+                                }
                             }
+                        }
+
+                        // Show completed toggle
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Selesai",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Switch(
+                                checked = uiState.showCompleted,
+                                onCheckedChange = { viewModel.toggleShowCompleted() },
+                                modifier = Modifier.scale(0.8f)
+                            )
                         }
                     }
                 }
