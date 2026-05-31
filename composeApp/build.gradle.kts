@@ -159,6 +159,9 @@ sqldelight {
     databases {
         create("StudyHubDatabase") {
             packageName.set("com.studyhub.database")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+            migrationOutputDirectory.set(file("src/commonMain/sqldelight/migrations"))
+            verifyMigrations.set(true)
         }
     }
 }

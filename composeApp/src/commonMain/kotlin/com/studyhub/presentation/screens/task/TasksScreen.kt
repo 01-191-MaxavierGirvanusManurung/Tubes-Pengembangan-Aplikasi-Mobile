@@ -81,6 +81,10 @@ fun TasksScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 actions = {
                     GlassIconButton(
+                        icon = Icons.Default.AutoAwesome,
+                        onClick = { navController.navigate(Screen.SmartPriority.route) }
+                    )
+                    GlassIconButton(
                         icon = if (uiState.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
                         onClick = { viewModel.toggleViewMode() }
                     )

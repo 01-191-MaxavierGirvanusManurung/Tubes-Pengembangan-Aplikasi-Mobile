@@ -2,6 +2,7 @@ package com.studyhub.presentation.screens.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -275,7 +276,9 @@ fun HomeScreen(navController: NavController) {
             item {
                 Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate(Screen.SmartPriority.route) },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8F0)),
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF5D8C0))

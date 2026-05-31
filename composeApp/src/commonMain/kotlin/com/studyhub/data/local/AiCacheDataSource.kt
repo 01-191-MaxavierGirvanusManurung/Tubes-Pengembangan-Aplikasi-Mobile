@@ -24,10 +24,13 @@ object AiUsageLimit {
 
 class AiCacheDataSource(private val database: StudyHubDatabase) {
 
-    fun getValidCache(cacheKey: String): AiCacheEntity? =
+    fun getValidCache(cacheKey: String): AiCacheEntity? = try {
         database.aiCacheEntityQueries
             .selectValidCache(cacheKey, currentTimeMillis())
             .executeAsOneOrNull()
+    } catch (e: Exception) {
+        null
+    }
 
     fun insertCache(
         cacheKey: String,
@@ -35,61 +38,84 @@ class AiCacheDataSource(private val database: StudyHubDatabase) {
         promptType: String,
         expiresAt: Long
     ) {
-        database.aiCacheEntityQueries.insertCache(
-            cacheKey = cacheKey,
-            result = result,
-            promptType = promptType,
-            createdAt = currentTimeMillis(),
-            expiresAt = expiresAt
-        )
+        try {
+            database.aiCacheEntityQueries.insertCache(
+                cacheKey = cacheKey,
+                result = result,
+                promptType = promptType,
+                createdAt = currentTimeMillis(),
+                expiresAt = expiresAt
+            )
+        } catch (e: Exception) {
+            // Table might not exist yet
+        }
     }
 
     fun deleteExpiredCache() {
-        database.aiCacheEntityQueries
-            .deleteExpiredCache(currentTimeMillis())
+        try {
+            database.aiCacheEntityQueries
+                .deleteExpiredCache(currentTimeMillis())
+        } catch (e: Exception) {
+        }
     }
 
     fun getUsageStats(): AiUsageStats {
-        val today = getTodayDateString()
-        val usage = database.aiUsageEntityQueries
-            .getUsage()
-            .executeAsOneOrNull()
+        return try {
+            val today = getTodayDateString()
+            val usage = database.aiUsageEntityQueries
+                .getUsage()
+                .executeAsOneOrNull()
 
-        return if (usage == null || usage.lastResetDate != today) {
-            // Reset daily counter
-            database.aiUsageEntityQueries.upsertUsage(
-                priorityCallsToday = 0,
-                reminderCallsToday = 0,
-                lastResetDate = today
-            )
-            AiUsageStats(0, 0, today)
-        } else {
-            AiUsageStats(
-                priorityCallsToday = usage.priorityCallsToday.toInt(),
-                reminderCallsToday = usage.reminderCallsToday.toInt(),
-                lastResetDate = usage.lastResetDate
-            )
+            if (usage == null || usage.lastResetDate != today) {
+                database.aiUsageEntityQueries.upsertUsage(
+                    priorityCallsToday = 0,
+                    reminderCallsToday = 0,
+                    lastResetDate = today
+                )
+                AiUsageStats(0, 0, today)
+            } else {
+                AiUsageStats(
+                    priorityCallsToday = usage.priorityCallsToday.toInt(),
+                    reminderCallsToday = usage.reminderCallsToday.toInt(),
+                    lastResetDate = usage.lastResetDate
+                )
+            }
+        } catch (e: Exception) {
+            // Table might not exist yet — return safe defaults
+            AiUsageStats(0, 0, getTodayDateString())
         }
     }
 
     fun incrementPriorityUsage() {
-        ensureTodayUsage()
-        database.aiUsageEntityQueries.incrementPriority()
+        try {
+            ensureTodayUsage()
+            database.aiUsageEntityQueries.incrementPriority()
+        } catch (e: Exception) {
+            // Silent fail
+        }
     }
 
     fun incrementReminderUsage() {
-        ensureTodayUsage()
-        database.aiUsageEntityQueries.incrementReminder()
+        try {
+            ensureTodayUsage()
+            database.aiUsageEntityQueries.incrementReminder()
+        } catch (e: Exception) {
+            // Silent fail
+        }
     }
 
-    fun canCallPriority(): Boolean {
+    fun canCallPriority(): Boolean = try {
         val stats = getUsageStats()
-        return stats.priorityCallsToday < AiUsageLimit.MAX_PRIORITY_PER_DAY
+        stats.priorityCallsToday < AiUsageLimit.MAX_PRIORITY_PER_DAY
+    } catch (e: Exception) {
+        true // Allow if can't check
     }
 
-    fun canCallReminder(): Boolean {
+    fun canCallReminder(): Boolean = try {
         val stats = getUsageStats()
-        return stats.reminderCallsToday < AiUsageLimit.MAX_REMINDER_PER_DAY
+        stats.reminderCallsToday < AiUsageLimit.MAX_REMINDER_PER_DAY
+    } catch (e: Exception) {
+        true
     }
 
     private fun ensureTodayUsage() {

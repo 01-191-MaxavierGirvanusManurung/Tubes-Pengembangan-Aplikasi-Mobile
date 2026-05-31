@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.studyhub.presentation.screens.calendar.CalendarScreen
 import com.studyhub.presentation.screens.home.HomeScreen
 import com.studyhub.presentation.screens.profile.ProfileScreen
+import com.studyhub.presentation.screens.ai.SmartPriorityScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
@@ -76,6 +77,10 @@ fun AppNavigation() {
                 taskId = backStackEntry.arguments?.getString("taskId") ?: "",
                 navController = navController
             )
+        }
+
+        composable(Screen.SmartPriority.route) {
+            SmartPriorityScreen(navController)
         }
     }
 }

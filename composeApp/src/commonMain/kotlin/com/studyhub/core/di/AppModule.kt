@@ -27,6 +27,7 @@ import com.studyhub.presentation.screens.task.AddEditTaskViewModel
 import com.studyhub.presentation.screens.task.TaskDetailViewModel
 import com.studyhub.presentation.screens.calendar.CalendarViewModel
 import com.studyhub.presentation.screens.profile.ProfileViewModel
+import com.studyhub.presentation.screens.ai.SmartPriorityViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
@@ -98,6 +99,7 @@ val viewModelModule = module {
     viewModelOf(::CalendarViewModel)
     viewModelOf(::ProfileViewModel)
     viewModelOf(::ThemeViewModel)
+    viewModelOf(::SmartPriorityViewModel)
 }
 
 // ==================== SHARED MODULES ====================
