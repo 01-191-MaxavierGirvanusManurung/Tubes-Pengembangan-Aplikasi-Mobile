@@ -12,16 +12,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.presentation.theme.PriorityHigh
-import com.studyhub.presentation.theme.PriorityLow
-import com.studyhub.presentation.theme.PriorityMedium
+import com.studyhub.presentation.screens.ai.SmartReminderUiState
+import com.studyhub.presentation.screens.ai.SmartReminderViewModel
+import com.studyhub.presentation.theme.*
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -36,6 +38,7 @@ fun TaskDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showEditBottomSheet by remember { mutableStateOf(false) }
+    var showSmartReminderSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
@@ -169,6 +172,21 @@ fun TaskDetailScreen(
                             )
                         }
 
+                        // AI Smart Reminder Button
+                        Button(
+                            onClick = { showSmartReminderSheet = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Smart Reminder")
+                        }
+
                         // Info Section (Date & Time)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -223,9 +241,158 @@ fun TaskDetailScreen(
             onSuccess = { showEditBottomSheet = false }
         )
     }
+
+    if (showSmartReminderSheet) {
+        SmartReminderBottomSheet(
+            taskId = taskId,
+            onDismiss = { showSmartReminderSheet = false },
+            onSetReminder = { /* TODO: Implement persistent reminder storage if needed */ }
+        )
+    }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SmartReminderBottomSheet(
+    taskId: String,
+    onDismiss: () -> Unit,
+    onSetReminder: (Long) -> Unit
+) {
+    val viewModel: SmartReminderViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(taskId) {
+        viewModel.loadReminderForTask(taskId)
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = ShapeBottomSheet
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.large),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(
+                    Spacing.small
+                )
+            ) {
+                Icon(
+                    Icons.Default.AutoAwesome, null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    "Smart Reminder",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+
+            Spacer(Modifier.height(Spacing.large))
+
+            when (val state = uiState) {
+                is SmartReminderUiState.Loading -> {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(Spacing.small))
+                    Text(
+                        "AI menganalisis pola belajarmu...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                is SmartReminderUiState.Success -> {
+                    val formattedTime = formatReminderTime(
+                        state.schedule.suggestedReminderTime
+                    )
+                    Text(
+                        "Disarankan reminder pada",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        formattedTime,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(Spacing.small))
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            "\"${state.schedule.adaptiveReason}\"",
+                            modifier = Modifier.padding(Spacing.medium),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Spacer(Modifier.height(Spacing.large))
+                    Button(
+                        onClick = {
+                            onSetReminder(
+                                state.schedule.suggestedReminderTime
+                            )
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Icon(
+                            Icons.Default.Alarm, null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(Spacing.small))
+                        Text("Set Reminder")
+                    }
+                }
+
+                is SmartReminderUiState.QuotaExceeded,
+                is SmartReminderUiState.Error -> {
+                    Icon(
+                        Icons.Default.WifiOff, null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(Modifier.height(Spacing.small))
+                    Text(
+                        "AI tidak tersedia — menggunakan default",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                else -> {}
+            }
+
+            Spacer(Modifier.height(Spacing.normal))
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Tutup")
+            }
+            Spacer(Modifier.height(Spacing.large))
+        }
+    }
+}
+
+private val ShapeBottomSheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
 private fun formatDate(epochMillis: Long): String {
     val date = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault()).date
     return "${date.dayOfMonth} ${date.month.name.lowercase().capitalizeFirst()} ${date.year}"
+}
+
+private fun formatReminderTime(epochMillis: Long): String {
+    val instant = Instant.fromEpochMilliseconds(epochMillis)
+    val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    val month = dateTime.month.name.lowercase().capitalizeFirst()
+    return "${dateTime.dayOfMonth} $month ${dateTime.year}, ${dateTime.hour.toString().padStart(2, '0')}:${dateTime.minute.toString().padStart(2, '0')}"
 }
