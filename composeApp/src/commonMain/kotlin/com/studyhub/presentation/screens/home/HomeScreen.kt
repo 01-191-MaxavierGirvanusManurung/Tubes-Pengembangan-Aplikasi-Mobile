@@ -356,7 +356,6 @@ fun HomeScreen(navController: NavController) {
 
     if (showFocusTimer) {
         FocusTimerBottomSheet(
-            initialWorkMinutes = uiState.pomodoroWorkDuration,
             onDismiss = { 
                 showFocusTimer = false 
             }

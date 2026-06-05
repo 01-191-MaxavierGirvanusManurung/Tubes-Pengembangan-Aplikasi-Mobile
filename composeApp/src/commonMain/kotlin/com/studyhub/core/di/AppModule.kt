@@ -6,6 +6,9 @@ import com.studyhub.database.StudyHubDatabase
 import com.studyhub.data.local.LocalSubjectDataSource
 import com.studyhub.data.local.LocalTaskDataSource
 import com.studyhub.data.local.AiCacheDataSource
+import com.studyhub.data.local.SyncQueueDataSource
+import com.studyhub.data.sync.SyncManager
+import com.studyhub.core.manager.PomodoroManager
 import com.studyhub.data.remote.GroqApiClient
 import com.studyhub.data.repository.SubjectRepositoryImpl
 import com.studyhub.data.repository.TaskRepositoryImpl
@@ -13,6 +16,8 @@ import com.studyhub.data.repository.AiRepositoryImpl
 import com.studyhub.domain.repository.SubjectRepository
 import com.studyhub.domain.repository.TaskRepository
 import com.studyhub.domain.repository.AiRepository
+import com.studyhub.core.util.NetworkMonitor
+import com.studyhub.presentation.navigation.NetworkViewModel
 import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
 import com.studyhub.domain.usecase.ai.*
@@ -49,6 +54,9 @@ val databaseModule = module {
     single { LocalTaskDataSource(get()) }
     single { LocalSubjectDataSource(get()) }
     single { AiCacheDataSource(get()) }
+    single { SyncQueueDataSource(get()) }
+    single { SyncManager(get(), get(), get()) }
+    single { PomodoroManager() }
 }
 
 // ==================== PREFERENCES MODULE ====================
@@ -60,7 +68,7 @@ val preferencesModule = module {
 // ==================== REPOSITORY MODULE ====================
 
 val repositoryModule = module {
-    single<TaskRepository> { TaskRepositoryImpl(get()) }
+    single<TaskRepository> { TaskRepositoryImpl(get(), get(), get()) }
     single<SubjectRepository> { SubjectRepositoryImpl(get()) }
     single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
     single<AiRepository> { AiRepositoryImpl(get(), get()) }
@@ -102,6 +110,7 @@ val viewModelModule = module {
     viewModelOf(::ThemeViewModel)
     viewModelOf(::SmartPriorityViewModel)
     viewModelOf(::SmartReminderViewModel)
+    viewModelOf(::NetworkViewModel)
 }
 
 // ==================== SHARED MODULES ====================
