@@ -43,7 +43,6 @@ import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.PillBadge
 import com.studyhub.presentation.components.StudyHubHeader
-import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.theme.*
 import kotlinx.datetime.*
@@ -51,7 +50,9 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen(navController: NavController) {
+fun CalendarScreen(
+    onNavigateToTaskDetail: (String) -> Unit
+) {
     val viewModel: CalendarViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
@@ -293,7 +294,8 @@ fun CalendarScreen(navController: NavController) {
                                         editingTaskId = task.id
                                         showAddBottomSheet = true 
                                     },
-                                    onDelete = { deleteTaskConfirmId = task.id }
+                                    onDelete = { deleteTaskConfirmId = task.id },
+                                    onClick = { onNavigateToTaskDetail(task.id) }
                                 )
                             }
                         }
@@ -356,7 +358,8 @@ fun CalendarScreen(navController: NavController) {
 fun CalendarTaskCard(
     task: Task,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
     val isDone = task.status == TaskStatus.DONE
     val subjectAccentColor = when (task.subject.lowercase()) {
@@ -366,7 +369,7 @@ fun CalendarTaskCard(
     }
     
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E0D4))
@@ -419,7 +422,7 @@ fun CalendarTaskCard(
             }
             
             IconButton(onClick = onEdit) {
-                Icon(Icons.Default.ChevronRight, null, tint = Color(0xFFBBBBBB))
+                Icon(Icons.Default.Edit, null, tint = Color(0xFFBBBBBB), modifier = Modifier.size(18.dp))
             }
         }
     }

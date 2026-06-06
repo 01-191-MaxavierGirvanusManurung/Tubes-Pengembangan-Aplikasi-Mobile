@@ -310,6 +310,27 @@ fun ProfileScreen(navController: NavController) {
                             checked = uiState.isDarkMode,
                             onCheckedChange = { viewModel.toggleDarkMode() }
                         )
+                        
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color(0xFFE8E0D4))
+                        
+                        SettingsToggleItem(
+                            title = "Notifikasi",
+                            subtitle = "Aktifkan pengingat tugas",
+                            icon = Icons.Default.Notifications,
+                            checked = uiState.notificationEnabled,
+                            onCheckedChange = { viewModel.toggleNotification(it) }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color(0xFFE8E0D4))
+
+                        SettingsToggleItem(
+                            title = "Smart Reminder AI",
+                            subtitle = if (uiState.notificationEnabled) "Waktu reminder adaptif oleh AI" else "Aktifkan notifikasi terlebih dahulu",
+                            icon = Icons.Default.AutoAwesome,
+                            checked = uiState.isAiReminderEnabled && uiState.notificationEnabled,
+                            onCheckedChange = { if (uiState.notificationEnabled) viewModel.toggleAiReminder(it) },
+                            enabled = uiState.notificationEnabled
+                        )
                     }
                 }
             }
@@ -369,9 +390,11 @@ fun StatCard(
 @Composable
 fun SettingsToggleItem(
     title: String,
+    subtitle: String? = null,
     icon: ImageVector,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -384,15 +407,21 @@ fun SettingsToggleItem(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(11.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                .background(if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.LightGray.copy(alpha = 0.2f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = if (enabled) MaterialTheme.colorScheme.primary else Color.Gray, modifier = Modifier.size(18.dp))
         }
-        Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = if (enabled) Color.Unspecified else Color.Gray)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            }
+        }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = MaterialTheme.colorScheme.primary

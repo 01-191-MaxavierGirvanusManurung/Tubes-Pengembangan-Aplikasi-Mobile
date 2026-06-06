@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.studyhub.core.util.SystemAppearance
 import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
@@ -38,13 +37,15 @@ import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.TaskGridCard
-import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TasksScreen(navController: NavController) {
+fun TasksScreen(
+    onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToSmartPriority: () -> Unit
+) {
     val viewModel: TasksViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
@@ -61,9 +62,7 @@ fun TasksScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 ExtendedFloatingActionButton(
-                    onClick = {
-                        navController.navigate(Screen.SmartPriority.route)
-                    },
+                    onClick = onNavigateToSmartPriority,
                     icon = {
                         Icon(Icons.Default.AutoAwesome, null)
                     },
@@ -101,7 +100,7 @@ fun TasksScreen(navController: NavController) {
                 actions = {
                     GlassIconButton(
                         icon = Icons.Default.AutoAwesome,
-                        onClick = { navController.navigate(Screen.SmartPriority.route) }
+                        onClick = onNavigateToSmartPriority
                     )
                     GlassIconButton(
                         icon = if (uiState.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
@@ -321,7 +320,7 @@ fun TasksScreen(navController: NavController) {
                                         showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
+                                    onClick = { onNavigateToTaskDetail(task.id) }
                                 )
                             }
                         }
@@ -345,7 +344,7 @@ fun TasksScreen(navController: NavController) {
                                         showAddBottomSheet = true
                                     },
                                     onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
+                                    onClick = { onNavigateToTaskDetail(task.id) }
                                 )
                             }
                         }

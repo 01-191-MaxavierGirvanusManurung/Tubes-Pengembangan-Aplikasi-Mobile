@@ -48,6 +48,8 @@ Berikut adalah fondasi teknis yang telah diimplementasikan dalam pengembangan sa
 - **Sprint 3 Navigation & UI**: Penambahan rute navigasi untuk fitur Smart Priority, Progress, dan Pomodoro, serta integrasi shortcut AI di beranda.
 - **Database Migration System**: Implementasi skema migrasi SQLDelight untuk mendukung pembaruan struktur database secara aman pada perangkat pengguna.
 - **Advanced Task Management**: Perbaikan sistem *state reset* pada form tambah/edit tugas dan sentralisasi aksi tambah tugas untuk UX yang lebih konsisten.
+- **Smart Reminder Notification System**: Implementasi sistem notifikasi push yang adaptif. Menggunakan `AlarmManager` untuk presisi waktu, mendukung riwayat notifikasi dengan fitur *swipe-to-delete*, dan integrasi pengaturan toggle di profil. Pengingat otomatis terjadwal ulang setelah perangkat dihidupkan kembali (*reboot*).
+- **Task UI & Stability Improvements**: Pembaruan tampilan kartu tugas untuk menampilkan jam deadline yang presisi, perbaikan bug navigasi pada ikon notifikasi, dan konsolidasi dependensi Koin untuk stabilitas aplikasi.
 
 ---
 

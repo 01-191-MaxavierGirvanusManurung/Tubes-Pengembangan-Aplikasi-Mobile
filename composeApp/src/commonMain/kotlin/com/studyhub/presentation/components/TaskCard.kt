@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.core.util.formatTimeOnly
 import com.studyhub.presentation.theme.*
 import kotlinx.datetime.*
 
@@ -153,7 +154,7 @@ fun TaskCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "~${task.estimatedMinutes}m",
+                        Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFF888888)
                     )
@@ -290,15 +291,22 @@ fun TaskGridCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val deadline = formatDeadline(task.dueDate)
-                Text(
-                    deadline,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = when {
-                        deadline == "Overdue" -> Color(0xFFE24B4A)
-                        deadline == "Tomorrow" -> Color(0xFFE85D35)
-                        else -> Color(0xFF888888)
-                    }
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        deadline,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = when {
+                            deadline == "Overdue" -> Color(0xFFE24B4A)
+                            deadline == "Tomorrow" -> Color(0xFFE85D35)
+                            else -> Color(0xFF888888)
+                        }
+                    )
+                    Text(
+                        "• ${Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly()}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF888888)
+                    )
+                }
                 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {

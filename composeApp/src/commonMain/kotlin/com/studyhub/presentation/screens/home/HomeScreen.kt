@@ -26,13 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import com.studyhub.core.util.SystemAppearance
 import com.studyhub.presentation.components.GlassIconButton
 import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.StudyHubHeader
-import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.screens.home.components.FocusTimerBottomSheet
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.theme.*
@@ -40,7 +37,12 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    onNavigateToTasks: () -> Unit,
+    onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToSmartPriority: () -> Unit,
+    onNavigateToNotifHistory: () -> Unit
+) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -49,6 +51,8 @@ fun HomeScreen(navController: NavController) {
     var showFocusTimer by remember { mutableStateOf(false) }
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
+
+    NotificationPermissionHandler()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -79,11 +83,32 @@ fun HomeScreen(navController: NavController) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                     actions = {
-                        GlassIconButton(
-                            icon = Icons.Outlined.Notifications,
-                            onClick = { /* Notifications */ },
-                            hasNotification = true
-                        )
+                        // Bell icon with unread badge
+                        Box(contentAlignment = Alignment.Center) {
+                            IconButton(onClick = {
+                                onNavigateToNotifHistory()
+                            }) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    "Notifikasi",
+                                    tint = Color.White
+                                )
+                            }
+
+                            if (uiState.unreadNotifCount > 0) {
+                                Badge(
+                                    containerColor = Color.Red,
+                                    contentColor = Color.White,
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                                ) {
+                                    Text(
+                                        if (uiState.unreadNotifCount > 99) "99+"
+                                        else uiState.unreadNotifCount.toString(),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
                     },
                     content = {
                         LiquidGlassCard(
@@ -183,7 +208,7 @@ fun HomeScreen(navController: NavController) {
                             style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
                             fontWeight = FontWeight.Bold
                         )
-                        TextButton(onClick = { navController.navigate(Screen.Tasks.route) }) {
+                        TextButton(onClick = onNavigateToTasks) {
                             Text("See all", color = GoldenSuedeDark)
                         }
                     }
@@ -205,7 +230,7 @@ fun HomeScreen(navController: NavController) {
                                         showAddBottomSheet = true 
                                     },
                                     onDelete = { viewModel.deleteTask(task.id) },
-                                    onClick = { navController.navigate(Screen.TaskDetail.createRoute(task.id)) }
+                                    onClick = { onNavigateToTaskDetail(task.id) }
                                 )
                             }
                         }
@@ -278,9 +303,7 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = Spacing.normal),
-                    onClick = {
-                        navController.navigate(Screen.SmartPriority.route)
-                    },
+                    onClick = onNavigateToSmartPriority,
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer
                     ),

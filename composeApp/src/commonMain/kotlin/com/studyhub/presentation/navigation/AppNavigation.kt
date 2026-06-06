@@ -21,6 +21,7 @@ import com.studyhub.presentation.screens.calendar.CalendarScreen
 import com.studyhub.presentation.screens.home.HomeScreen
 import com.studyhub.presentation.screens.profile.ProfileScreen
 import com.studyhub.presentation.screens.ai.SmartPriorityScreen
+import com.studyhub.presentation.screens.notification.NotifHistoryScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
@@ -97,6 +98,10 @@ fun AppNavigation() {
                 SmartPriorityScreen(navController)
             }
 
+            composable(Screen.NotifHistory.route) {
+                NotifHistoryScreen(navController)
+            }
+
             composable(Screen.Progress.route) {
                 ProgressScreen(navController)
             }
@@ -156,9 +161,33 @@ fun MainScreen(rootNavController: NavController) {
                 fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { -30 }
             }
         ) {
-            composable(Screen.Home.route) { HomeScreen(rootNavController) }
-            composable(Screen.Tasks.route) { TasksScreen(rootNavController) }
-            composable(Screen.Calendar.route) { CalendarScreen(rootNavController) }
+            composable(Screen.Home.route) { 
+                HomeScreen(
+                    onNavigateToTasks = { 
+                        navController.navigate(Screen.Tasks.route) {
+                            popUpTo(navController.graph.startDestinationRoute!!) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onNavigateToTaskDetail = { taskId -> rootNavController.navigate(Screen.TaskDetail.createRoute(taskId)) },
+                    onNavigateToSmartPriority = { rootNavController.navigate(Screen.SmartPriority.route) },
+                    onNavigateToNotifHistory = { rootNavController.navigate(Screen.NotifHistory.route) }
+                ) 
+            }
+            composable(Screen.Tasks.route) { 
+                TasksScreen(
+                    onNavigateToTaskDetail = { taskId -> rootNavController.navigate(Screen.TaskDetail.createRoute(taskId)) },
+                    onNavigateToSmartPriority = { rootNavController.navigate(Screen.SmartPriority.route) }
+                ) 
+            }
+            composable(Screen.Calendar.route) { 
+                CalendarScreen(
+                    onNavigateToTaskDetail = { taskId -> rootNavController.navigate(Screen.TaskDetail.createRoute(taskId)) }
+                ) 
+            }
             composable(Screen.Profile.route) { ProfileScreen(rootNavController) }
         }
     }

@@ -4,6 +4,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.domain.repository.PreferencesRepository
+import com.studyhub.domain.repository.ReminderRepository
+import com.studyhub.domain.usecase.notification.CancelReminderUseCase
 import com.studyhub.domain.usecase.preferences.GetUserPreferencesUseCase
 import com.studyhub.domain.usecase.preferences.SetDarkModeUseCase
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
@@ -45,7 +48,9 @@ data class Achievement(
 class ProfileViewModel(
     private val getUserPreferencesUseCase: GetUserPreferencesUseCase,
     private val setDarkModeUseCase: SetDarkModeUseCase,
-    private val getAllTasksUseCase: GetAllTasksUseCase
+    private val getAllTasksUseCase: GetAllTasksUseCase,
+    private val preferencesRepository: PreferencesRepository,
+    private val reminderRepository: ReminderRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<ProfileUiState> = combine(
@@ -102,6 +107,25 @@ class ProfileViewModel(
     fun toggleDarkMode() {
         viewModelScope.launch {
             setDarkModeUseCase(!uiState.value.isDarkMode)
+        }
+    }
+
+    fun toggleNotification(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setNotificationEnabled(enabled)
+            if (!enabled) {
+                // Cancel all active reminders
+                try {
+                    val cancelAll = CancelReminderUseCase(reminderRepository)
+                    cancelAll.cancelAll()
+                } catch (e: Exception) { }
+            }
+        }
+    }
+
+    fun toggleAiReminder(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setAiReminderEnabled(enabled)
         }
     }
 

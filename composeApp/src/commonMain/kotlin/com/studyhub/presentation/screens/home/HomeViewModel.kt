@@ -7,6 +7,7 @@ import com.studyhub.core.util.atEndOfDayMillis
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.model.UserPreferences
+import com.studyhub.domain.usecase.notification.GetUnreadCountUseCase
 import com.studyhub.domain.usecase.preferences.GetUserPreferencesUseCase
 import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
@@ -39,6 +40,7 @@ data class HomeUiState(
     val upcomingTasks: List<Task> = emptyList(),
     val subjectStats: List<SubjectHomeStat> = emptyList(),
     val pomodoroWorkDuration: Int = 25,
+    val unreadNotifCount: Int = 0,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -48,20 +50,33 @@ class HomeViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val getUserPreferencesUseCase: GetUserPreferencesUseCase
+    private val getUserPreferencesUseCase: GetUserPreferencesUseCase,
+    private val getUnreadCountUseCase: GetUnreadCountUseCase
 ) : ViewModel() {
 
     private val now = Clock.System.now()
     private val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
     private val today = localNow.date
 
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
+    fun loadUnreadCount() {
+        viewModelScope.launch {
+            try {
+                _unreadCount.value = getUnreadCountUseCase()
+            } catch (e: Exception) { }
+        }
+    }
+
     // Combine all data sources into a single reactive UI State
     val uiState: StateFlow<HomeUiState> = combine(
         getUserPreferencesUseCase().distinctUntilChanged(),
         getAllTasksUseCase().distinctUntilChanged(),
         getActiveTasksUseCase().distinctUntilChanged(),
-        getTasksByDateUseCase(today).distinctUntilChanged()
-    ) { prefs, allTasks, allActive, todayTasks ->
+        getTasksByDateUseCase(today).distinctUntilChanged(),
+        _unreadCount
+    ) { prefs, allTasks, allActive, todayTasks, unread ->
         val startOfTomorrow = today.atEndOfDayMillis() + 1
         
         val doneCount = allTasks.count { it.status == TaskStatus.DONE && !it.isDeleted }
@@ -101,6 +116,7 @@ class HomeViewModel(
             completionPercentage = completionPct,
             upcomingTasks = upcoming,
             subjectStats = stats,
+            unreadNotifCount = unread,
             isLoading = false
         )
     }.stateIn(
@@ -108,6 +124,10 @@ class HomeViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = HomeUiState(isLoading = true)
     )
+
+    init {
+        loadUnreadCount()
+    }
 
     fun deleteTask(taskId: String) {
         viewModelScope.launch(Dispatchers.IO) {
