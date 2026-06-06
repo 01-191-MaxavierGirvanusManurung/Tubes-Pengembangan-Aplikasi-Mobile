@@ -18,6 +18,7 @@ object PreferencesKeys {
     val POMODORO_FOCUS = intPreferencesKey("pomodoro_focus")
     val POMODORO_SHORT_BREAK = intPreferencesKey("pomodoro_short_break")
     val POMODORO_LONG_BREAK = intPreferencesKey("pomodoro_long_break")
+    val POMODORO_SESSIONS_BEFORE_LONG = intPreferencesKey("pomodoro_sessions_before_long")
 }
 
 class PreferencesDataSource(
@@ -139,7 +140,8 @@ class PreferencesDataSource(
                 isAiReminderEnabled = prefs[PreferencesKeys.IS_AI_REMINDER] ?: true,
                 pomodoroFocusDuration = prefs[PreferencesKeys.POMODORO_FOCUS] ?: 25,
                 pomodoroShortBreak = prefs[PreferencesKeys.POMODORO_SHORT_BREAK] ?: 5,
-                pomodoroLongBreak = prefs[PreferencesKeys.POMODORO_LONG_BREAK] ?: 15
+                pomodoroLongBreak = prefs[PreferencesKeys.POMODORO_LONG_BREAK] ?: 15,
+                pomodoroSessionsBeforeLong = prefs[PreferencesKeys.POMODORO_SESSIONS_BEFORE_LONG] ?: 4
             )
         }
 }

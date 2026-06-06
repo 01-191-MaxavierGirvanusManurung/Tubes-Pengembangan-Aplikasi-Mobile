@@ -34,7 +34,11 @@ class NotifHistoryDataSource(
             taskId, taskTitle, taskSubject,
             aiReason, currentTimeMillis()
         )
-    } catch (e: Exception) { }
+        println("Successfully inserted to NotifHistoryEntity: $taskTitle")
+    } catch (e: Exception) {
+        println("Error inserting to NotifHistoryEntity: ${e.message}")
+        e.printStackTrace()
+    }
 
     fun markAllRead() = try {
         database.notifHistoryEntityQueries.markAllRead()

@@ -29,6 +29,7 @@ import com.studyhub.presentation.screens.profile.ProfileViewModel
 import com.studyhub.presentation.screens.ai.SmartPriorityViewModel
 import com.studyhub.presentation.screens.ai.SmartReminderViewModel
 import com.studyhub.presentation.screens.notification.NotifHistoryViewModel
+import com.studyhub.presentation.screens.pomodoro.PomodoroViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
@@ -52,8 +53,9 @@ val databaseModule = module {
     single { SyncQueueDataSource(get()) }
     single { ReminderDataSource(get()) }
     single { NotifHistoryDataSource(get()) }
+    single { PomodoroDataSource(get()) }
     single { SyncManager(get(), get(), get()) }
-    single { PomodoroManager() }
+    single { PomodoroManager(get(), get(), get(), get(), get()) }
 }
 
 // ==================== PREFERENCES MODULE ====================
@@ -70,6 +72,7 @@ val repositoryModule = module {
     single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
     single<AiRepository> { AiRepositoryImpl(get(), get()) }
     single<NotifHistoryRepository> { NotifHistoryRepositoryImpl(get()) }
+    single<PomodoroRepository> { PomodoroRepositoryImpl(get()) }
 }
 
 // ==================== USE CASE MODULE ====================
@@ -118,6 +121,7 @@ val viewModelModule = module {
     viewModelOf(::SmartReminderViewModel)
     viewModelOf(::NetworkViewModel)
     viewModelOf(::NotifHistoryViewModel)
+    viewModelOf(::PomodoroViewModel)
 }
 
 // ==================== SHARED MODULES ====================

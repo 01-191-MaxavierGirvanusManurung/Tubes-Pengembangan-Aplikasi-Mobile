@@ -105,6 +105,7 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
             implementation(libs.datastore.preferences)
             implementation(libs.accompanist.systemuicontroller)
+            implementation(libs.localbroadcastmanager)
         }
         
         iosMain.dependencies {

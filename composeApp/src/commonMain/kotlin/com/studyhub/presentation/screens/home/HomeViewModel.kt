@@ -64,8 +64,13 @@ class HomeViewModel(
     fun loadUnreadCount() {
         viewModelScope.launch {
             try {
-                _unreadCount.value = getUnreadCountUseCase()
-            } catch (e: Exception) { }
+                println("HomeViewModel: Loading unread count...")
+                val count = getUnreadCountUseCase()
+                println("HomeViewModel: Unread count = $count")
+                _unreadCount.value = count
+            } catch (e: Exception) {
+                println("HomeViewModel: Error loading unread count: ${e.message}")
+            }
         }
     }
 

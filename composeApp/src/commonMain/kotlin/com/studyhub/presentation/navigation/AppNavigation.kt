@@ -22,6 +22,7 @@ import com.studyhub.presentation.screens.home.HomeScreen
 import com.studyhub.presentation.screens.profile.ProfileScreen
 import com.studyhub.presentation.screens.ai.SmartPriorityScreen
 import com.studyhub.presentation.screens.notification.NotifHistoryScreen
+import com.studyhub.presentation.screens.pomodoro.PomodoroScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
@@ -100,6 +101,11 @@ fun AppNavigation() {
 
             composable(Screen.NotifHistory.route) {
                 NotifHistoryScreen(navController)
+            }
+
+            composable(Screen.Pomodoro.route) { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId")
+                PomodoroScreen(taskId, navController)
             }
 
             composable(Screen.Progress.route) {

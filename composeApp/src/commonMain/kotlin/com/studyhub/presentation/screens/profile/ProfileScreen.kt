@@ -331,6 +331,18 @@ fun ProfileScreen(navController: NavController) {
                             onCheckedChange = { if (uiState.notificationEnabled) viewModel.toggleAiReminder(it) },
                             enabled = uiState.notificationEnabled
                         )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = Color(0xFFE8E0D4))
+                        
+                        TextButton(
+                            onClick = { 
+                                // Send test broadcast directly for now (Android specific)
+                                // In a real app this would go through a ViewModel
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(16.dp)
+                        ) {
+                            Text("Kirim Test Notifikasi")
+                        }
                     }
                 }
             }

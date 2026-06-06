@@ -43,11 +43,14 @@ class ReminderBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                 // Save to history
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
+                        println("ReminderBroadcastReceiver: Saving reminder to history - $taskTitle")
                         notifHistoryRepository.addToHistory(
                             taskId, taskTitle,
                             taskSubject, aiReason
                         )
-                    } catch (e: Exception) { }
+                    } catch (e: Exception) {
+                        println("ReminderBroadcastReceiver: Error saving to history: ${e.message}")
+                    }
                 }
             }
 

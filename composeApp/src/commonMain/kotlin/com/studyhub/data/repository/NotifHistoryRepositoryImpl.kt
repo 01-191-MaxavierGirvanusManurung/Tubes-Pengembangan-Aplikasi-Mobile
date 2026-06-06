@@ -11,7 +11,10 @@ class NotifHistoryRepositoryImpl(
     override suspend fun addToHistory(
         taskId: String, taskTitle: String,
         taskSubject: String, aiReason: String
-    ) = dataSource.insert(taskId, taskTitle, taskSubject, aiReason)
+    ) {
+        println("NotifHistoryRepositoryImpl: Adding to history - $taskTitle")
+        dataSource.insert(taskId, taskTitle, taskSubject, aiReason)
+    }
     override suspend fun markAllRead() = dataSource.markAllRead()
     override suspend fun markRead(id: String) = dataSource.markRead(id)
     override suspend fun deleteItem(id: String) = dataSource.deleteById(id)
