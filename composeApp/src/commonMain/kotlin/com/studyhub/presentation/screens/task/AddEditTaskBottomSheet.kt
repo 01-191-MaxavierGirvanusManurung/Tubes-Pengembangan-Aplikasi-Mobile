@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,8 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,6 +43,7 @@ fun AddEditTaskBottomSheet(
     val viewModel: AddEditTaskViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val focusManager = LocalFocusManager.current
 
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -58,7 +65,6 @@ fun AddEditTaskBottomSheet(
         if (taskId != null) {
             viewModel.loadTask(taskId)
         } else {
-            // Reset local state for new task
             title = ""
             description = ""
             selectedSubject = "Mathematics"
@@ -101,7 +107,7 @@ fun AddEditTaskBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = Spacing.large)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 32.dp)
         ) {
@@ -128,11 +134,11 @@ fun AddEditTaskBottomSheet(
                     onClick = onDismiss,
                     modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Default.Close, "Tutup", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(Spacing.large))
 
             // Task Title
             Text(
@@ -141,22 +147,30 @@ fun AddEditTaskBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.small))
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
                 placeholder = { Text("e.g. Complete Math Assignment...", color = MaterialTheme.colorScheme.outline) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedBorderColor = MaterialTheme.colorScheme.primary
-                )
+                ),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
+                singleLine = true
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.normal))
 
             // Subject
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -168,14 +182,14 @@ fun AddEditTaskBottomSheet(
                 )
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = { showAddSubjectDialog = true }, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Add, "Tambah Mata Kuliah", tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.small))
             
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
             ) {
                 val allSubjects = listOf("Mathematics", "Physics", "English", "History", "Chemistry") + 
                                   uiState.subjects.map { it.name }.filter { it !in listOf("Mathematics", "Physics", "English", "History", "Chemistry") }
@@ -198,9 +212,9 @@ fun AddEditTaskBottomSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.normal))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.normal)) {
                 // Due Date
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -209,13 +223,13 @@ fun AddEditTaskBottomSheet(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(Spacing.small))
                     OutlinedTextField(
                         value = Instant.fromEpochMilliseconds(dueDate).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
                         onValueChange = {},
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -224,7 +238,7 @@ fun AddEditTaskBottomSheet(
                         ),
                         trailingIcon = {
                             IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.CalendarToday, "Pilih Tanggal", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     )
@@ -238,17 +252,17 @@ fun AddEditTaskBottomSheet(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(Spacing.small))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(MaterialTheme.shapes.medium)
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         IconButton(onClick = { if (estimatedMinutes > 5) estimatedMinutes -= 5 }) {
-                            Icon(Icons.Default.Remove, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.Remove, "Kurangi Estimasi", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(
                             text = estimatedMinutes.toString(),
@@ -258,13 +272,13 @@ fun AddEditTaskBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         IconButton(onClick = { estimatedMinutes += 5 }) {
-                            Icon(Icons.Default.Add, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.Add, "Tambah Estimasi", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.normal))
 
             // Priority
             Text(
@@ -273,8 +287,8 @@ fun AddEditTaskBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(Modifier.height(Spacing.small))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
                 Priority.entries.forEach { p ->
                     val isSelected = priority == p
                     val pColor = when (p) {
@@ -287,7 +301,7 @@ fun AddEditTaskBottomSheet(
                         modifier = Modifier
                             .weight(1f)
                             .clickable { priority = p },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = if (isSelected) pColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp, 
@@ -300,10 +314,10 @@ fun AddEditTaskBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(Modifier.size(8.dp).clip(CircleShape).background(pColor))
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(Spacing.small))
                             Text(
                                 p.name.lowercase().replaceFirstChar { it.uppercase() }, 
-                                fontSize = 12.sp, 
+                                style = MaterialTheme.typography.labelSmall,
                                 color = if (isSelected) pColor else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -311,7 +325,7 @@ fun AddEditTaskBottomSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.normal))
 
             // Status
             Text(
@@ -320,14 +334,14 @@ fun AddEditTaskBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(Modifier.height(Spacing.small))
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
                 TaskStatus.entries.forEach { s ->
                     val isSelected = status == s
                     InputChip(
                         selected = isSelected,
                         onClick = { status = s },
-                        label = { Text(s.value.replace("_", " ").replaceFirstChar { it.uppercase() }, fontSize = 11.sp) },
+                        label = { Text(s.value.replace("_", " ").replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall) },
                         modifier = Modifier.weight(1f),
                         colors = InputChipDefaults.inputChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -353,7 +367,7 @@ fun AddEditTaskBottomSheet(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.normal))
 
             // Description
             Text(
@@ -362,25 +376,32 @@ fun AddEditTaskBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.small))
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 placeholder = { Text("Add details about this task...", color = MaterialTheme.colorScheme.outline) },
                 modifier = Modifier.fillMaxWidth().height(100.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     focusedBorderColor = MaterialTheme.colorScheme.primary
+                ),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
                 )
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(Spacing.large))
 
             // Actions
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.medium)) {
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.weight(0.4f).height(56.dp),
@@ -388,7 +409,7 @@ fun AddEditTaskBottomSheet(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant, 
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Text("Cancel")
                 }
@@ -410,14 +431,14 @@ fun AddEditTaskBottomSheet(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = MaterialTheme.shapes.medium,
                     enabled = title.isNotBlank() && !uiState.isLoading
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                     } else {
                         Icon(Icons.Default.Save, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(Spacing.small))
                         Text(if (taskId == null) "Add Task" else "Save Changes")
                     }
                 }
@@ -462,6 +483,20 @@ fun AddEditTaskBottomSheet(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Words,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (newSubjectName.isNotBlank()) {
+                                viewModel.addSubject(newSubjectName)
+                                selectedSubject = newSubjectName
+                                newSubjectName = ""
+                                showAddSubjectDialog = false
+                            }
+                        }
                     )
                 )
             },

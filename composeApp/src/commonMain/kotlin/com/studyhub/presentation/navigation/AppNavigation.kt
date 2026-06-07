@@ -4,9 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -23,6 +21,7 @@ import com.studyhub.presentation.screens.profile.ProfileScreen
 import com.studyhub.presentation.screens.ai.SmartPriorityScreen
 import com.studyhub.presentation.screens.notification.NotifHistoryScreen
 import com.studyhub.presentation.screens.pomodoro.PomodoroScreen
+import com.studyhub.presentation.screens.progress.ProgressScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
@@ -103,15 +102,6 @@ fun AppNavigation() {
                 NotifHistoryScreen(navController)
             }
 
-            composable(Screen.Pomodoro.route) { backStackEntry ->
-                val taskId = backStackEntry.arguments?.getString("taskId")
-                PomodoroScreen(taskId, navController)
-            }
-
-            composable(Screen.Progress.route) {
-                ProgressScreen(navController)
-            }
-
             composable(
                 route = Screen.Pomodoro.route,
                 arguments = listOf(
@@ -126,6 +116,10 @@ fun AppNavigation() {
                     taskId = backStackEntry.arguments?.getString("taskId"),
                     navController = navController
                 )
+            }
+
+            composable(Screen.Progress.route) {
+                ProgressScreen(navController)
             }
         }
     }
@@ -180,7 +174,8 @@ fun MainScreen(rootNavController: NavController) {
                     },
                     onNavigateToTaskDetail = { taskId -> rootNavController.navigate(Screen.TaskDetail.createRoute(taskId)) },
                     onNavigateToSmartPriority = { rootNavController.navigate(Screen.SmartPriority.route) },
-                    onNavigateToNotifHistory = { rootNavController.navigate(Screen.NotifHistory.route) }
+                    onNavigateToNotifHistory = { rootNavController.navigate(Screen.NotifHistory.route) },
+                    onNavigateToProgress = { rootNavController.navigate(Screen.Progress.route) }
                 ) 
             }
             composable(Screen.Tasks.route) { 
@@ -196,22 +191,5 @@ fun MainScreen(rootNavController: NavController) {
             }
             composable(Screen.Profile.route) { ProfileScreen(rootNavController) }
         }
-    }
-}
-
-@Composable
-fun ProgressScreen(navController: NavController) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Progress Screen — Sprint 3 P1")
-    }
-}
-
-@Composable
-fun PomodoroScreen(
-    taskId: String?,
-    navController: NavController
-) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Pomodoro Screen — Sprint 3 P1")
     }
 }

@@ -15,23 +15,24 @@ import kotlinx.coroutines.launch
 
 enum class ViewMode { LIST, GRID }
 
-@Stable
-data class TasksUiState(
-    val allTasks: List<Task> = emptyList(),
-    val filteredTasks: List<Task> = emptyList(),
-    val availableSubjects: List<String> = emptyList(),
-    val searchQuery: String = "",
-    val filterStatus: TaskStatus? = null,
-    val filterPriority: Priority? = null,
-    val filterSubject: String? = null,
-    val sortBy: SortBy = SortBy.DUE_DATE,
-    val showCompleted: Boolean = false,
-    val viewMode: ViewMode = ViewMode.LIST,
-    val taskCounts: Map<String, Int> = emptyMap(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val deleteConfirmTaskId: String? = null
-)
+sealed interface TasksUiState {
+    object Loading : TasksUiState
+    data class Success(
+        val allTasks: List<Task>,
+        val filteredTasks: List<Task>,
+        val availableSubjects: List<String>,
+        val searchQuery: String,
+        val filterStatus: TaskStatus?,
+        val filterPriority: Priority?,
+        val filterSubject: String?,
+        val sortBy: SortBy,
+        val showCompleted: Boolean,
+        val viewMode: ViewMode,
+        val taskCounts: Map<String, Int>,
+        val deleteConfirmTaskId: String? = null
+    ) : TasksUiState
+    data class Error(val message: String) : TasksUiState
+}
 
 class TasksViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
@@ -50,7 +51,7 @@ class TasksViewModel(
     private val _deleteConfirmTaskId = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<TasksUiState> = combine(
-        getAllTasksUseCase().distinctUntilChanged(),
+        getAllTasksUseCase(),
         _searchQuery,
         _filterStatus,
         _filterPriority,
@@ -60,59 +61,66 @@ class TasksViewModel(
         _viewMode,
         _deleteConfirmTaskId
     ) { flows ->
-        val allTasks = flows[0] as List<Task>
-        val query = flows[1] as String
-        val status = flows[2] as TaskStatus?
-        val priority = flows[3] as Priority?
-        val subject = flows[4] as String?
-        val sortBy = flows[5] as SortBy
-        val showCompleted = flows[6] as Boolean
-        val viewMode = flows[7] as ViewMode
-        val deleteId = flows[8] as String?
+        try {
+            val allTasks = flows[0] as List<Task>
+            val query = flows[1] as String
+            val status = flows[2] as TaskStatus?
+            val priority = flows[3] as Priority?
+            val subject = flows[4] as String?
+            val sortBy = flows[5] as SortBy
+            val showCompleted = flows[6] as Boolean
+            val viewMode = flows[7] as ViewMode
+            val deleteId = flows[8] as String?
 
-        val filtered = filterSortUseCase(
-            allTasks, status, priority, subject, sortBy, query, showCompleted
-        )
-        
-        val counts = mapOf(
-            "all" to allTasks.size,
-            TaskStatus.TODO.value to allTasks.count { it.status == TaskStatus.TODO },
-            TaskStatus.IN_PROGRESS.value to allTasks.count { it.status == TaskStatus.IN_PROGRESS },
-            TaskStatus.DONE.value to allTasks.count { it.status == TaskStatus.DONE }
-        )
+            val filtered = filterSortUseCase(
+                allTasks, status, priority, subject, sortBy, query, showCompleted
+            )
+            
+            val counts = mapOf(
+                "all" to allTasks.size,
+                TaskStatus.TODO.value to allTasks.count { it.status == TaskStatus.TODO },
+                TaskStatus.IN_PROGRESS.value to allTasks.count { it.status == TaskStatus.IN_PROGRESS },
+                TaskStatus.DONE.value to allTasks.count { it.status == TaskStatus.DONE }
+            )
 
-        val subjects = allTasks.map { it.subject }.distinct().sorted()
+            val subjects = allTasks.map { it.subject }.distinct().sorted()
 
-        TasksUiState(
-            allTasks = allTasks,
-            filteredTasks = filtered,
-            availableSubjects = subjects,
-            searchQuery = query,
-            filterStatus = status,
-            filterPriority = priority,
-            filterSubject = subject,
-            sortBy = sortBy,
-            showCompleted = showCompleted,
-            viewMode = viewMode,
-            taskCounts = counts,
-            isLoading = false,
-            deleteConfirmTaskId = deleteId
-        )
+            TasksUiState.Success(
+                allTasks = allTasks,
+                filteredTasks = filtered,
+                availableSubjects = subjects,
+                searchQuery = query,
+                filterStatus = status,
+                filterPriority = priority,
+                filterSubject = subject,
+                sortBy = sortBy,
+                showCompleted = showCompleted,
+                viewMode = viewMode,
+                taskCounts = counts,
+                deleteConfirmTaskId = deleteId
+            )
+        } catch (e: Exception) {
+            TasksUiState.Error(e.message ?: "Terjadi kesalahan saat memuat tugas")
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = TasksUiState(isLoading = true)
+        initialValue = TasksUiState.Loading
     )
 
     fun updateStatus(taskId: String, status: TaskStatus) {
         viewModelScope.launch(Dispatchers.IO) {
-            updateTaskStatusUseCase(taskId, status)
+            try {
+                updateTaskStatusUseCase(taskId, status)
+            } catch (e: Exception) { }
         }
     }
 
     fun deleteTask(taskId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteTaskUseCase(taskId)
+            try {
+                deleteTaskUseCase(taskId)
+            } catch (e: Exception) { }
         }
     }
 

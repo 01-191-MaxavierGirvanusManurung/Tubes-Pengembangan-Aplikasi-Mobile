@@ -1,7 +1,6 @@
 package com.studyhub.presentation.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -18,34 +17,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.studyhub.presentation.theme.Spacing
 
 @Composable
 fun StudyHubBottomBar(
     currentRoute: String?,
     onItemSelected: (Screen) -> Unit
 ) {
-    val activeColor = Color(0xFF8B7040)
-    val inactiveColor = Color(0xFF888888)
+    val activeColor = MaterialTheme.colorScheme.primary
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
 
     Surface(
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth().height(80.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFE8E0D4))
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         NavigationBar(
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             windowInsets = WindowInsets(0, 0, 0, 0)
         ) {
             val items = listOf(
-                Triple(Screen.Home, Icons.Outlined.Home, Icons.Filled.Home) to "Home",
-                Triple(Screen.Tasks, Icons.Outlined.Assignment, Icons.Filled.Assignment) to "Tasks",
-                Triple(Screen.Calendar, Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth) to "Calendar",
-                Triple(Screen.Profile, Icons.Outlined.Person, Icons.Filled.Person) to "Profile"
+                Triple(Screen.Home, Icons.Outlined.Home, Icons.Filled.Home) to "Beranda",
+                Triple(Screen.Tasks, Icons.Outlined.Assignment, Icons.Filled.Assignment) to "Tugas",
+                Triple(Screen.Calendar, Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth) to "Kalender",
+                Triple(Screen.Profile, Icons.Outlined.Person, Icons.Filled.Person) to "Profil"
             )
             
             items.forEach { (triple, label) ->
@@ -60,7 +59,6 @@ fun StudyHubBottomBar(
                             Icon(
                                 if (selected) filledIcon else outlineIcon,
                                 contentDescription = label,
-                                tint = if (selected) activeColor else inactiveColor,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -72,8 +70,7 @@ fun StudyHubBottomBar(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                                     fontSize = 11.sp
-                                ),
-                                color = if (selected) activeColor else inactiveColor
+                                )
                             )
                             if (selected) {
                                 Box(
@@ -91,7 +88,7 @@ fun StudyHubBottomBar(
                         unselectedIconColor = inactiveColor,
                         selectedTextColor = activeColor,
                         unselectedTextColor = inactiveColor,
-                        indicatorColor = Color.Transparent
+                        indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
                     )
                 )
             }

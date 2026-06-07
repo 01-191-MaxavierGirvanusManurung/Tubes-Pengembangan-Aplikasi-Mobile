@@ -5,12 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,16 +23,21 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.studyhub.presentation.components.GlassIconButton
 import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.StudyHubHeader
+import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.screens.home.components.FocusTimerBottomSheet
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.theme.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,7 +46,8 @@ fun HomeScreen(
     onNavigateToTasks: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToSmartPriority: () -> Unit,
-    onNavigateToNotifHistory: () -> Unit
+    onNavigateToNotifHistory: () -> Unit,
+    onNavigateToProgress: () -> Unit
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,325 +57,404 @@ fun HomeScreen(
     var showFocusTimer by remember { mutableStateOf(false) }
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
+    var deleteConfirmTaskId by remember { mutableStateOf<String?>(null) }
 
-    NotificationPermissionHandler()
+    val todayDateText = remember {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        "${now.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }}, ${now.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${now.dayOfMonth}"
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
-        LazyColumn(
-            state = scrollState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // Header Section
-            item {
-                StudyHubHeader(
-                    title = "Good morning, ${uiState.userName}! 👋",
-                    dateText = "Sunday, May 17",
-                    subtitle = {
-                        Row {
-                            Text("You have ", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
-                            Text(
-                                "${uiState.todayTasksCount} tasks",
-                                color = HighlightGold,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Text(" to tackle today", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
+        when (val state = uiState) {
+            is HomeUiState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is HomeUiState.Error -> {
+                Box(Modifier.fillMaxSize().padding(Spacing.large), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.message, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(Spacing.normal))
+                        Button(onClick = { viewModel.loadUnreadCount() }) {
+                            Text("Coba Lagi")
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    actions = {
-                        // Bell icon with unread badge
-                        Box(contentAlignment = Alignment.Center) {
-                            IconButton(onClick = {
-                                onNavigateToNotifHistory()
-                            }) {
-                                Icon(
-                                    Icons.Default.Notifications,
-                                    "Notifikasi",
-                                    tint = Color.White
-                                )
-                            }
-
-                            if (uiState.unreadNotifCount > 0) {
-                                Badge(
-                                    containerColor = Color.Red,
-                                    contentColor = Color.White,
-                                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
-                                ) {
+                    }
+                }
+            }
+            is HomeUiState.Success -> {
+                LazyColumn(
+                    state = scrollState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 100.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.large)
+                ) {
+                    // Header Section
+                    item {
+                        StudyHubHeader(
+                            title = "Good morning, ${state.userName}! 👋",
+                            dateText = todayDateText,
+                            subtitle = {
+                                Row {
+                                    Text("You have ", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        if (uiState.unreadNotifCount > 99) "99+"
-                                        else uiState.unreadNotifCount.toString(),
-                                        style = MaterialTheme.typography.labelSmall
+                                        "${state.todayTasksCount} tasks",
+                                        color = HighlightGold,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodyMedium
                                     )
+                                    Text(" to tackle today", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
                                 }
-                            }
-                        }
-                    },
-                    content = {
-                        LiquidGlassCard(
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            borderAlpha = 0.3f
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                // Canvas Progress Ring
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
-                                    Canvas(modifier = Modifier.fillMaxSize()) {
-                                        drawArc(
-                                            color = Color.White.copy(alpha = 0.15f),
-                                            startAngle = 0f,
-                                            sweepAngle = 360f,
-                                            useCenter = false,
-                                            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                                        )
-                                        drawArc(
-                                            color = Color(0xFFFBBF24),
-                                            startAngle = -90f,
-                                            sweepAngle = (uiState.completionPercentage / 100f) * 360f,
-                                            useCenter = false,
-                                            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                            actions = {
+                                Box(contentAlignment = Alignment.Center) {
+                                    IconButton(onClick = onNavigateToNotifHistory) {
+                                        Icon(
+                                            Icons.Default.Notifications,
+                                            contentDescription = "Notifikasi",
+                                            tint = MaterialTheme.colorScheme.onPrimary
                                         )
                                     }
-                                    Text(
-                                        "${uiState.completionPercentage}%",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
+
+                                    if (state.unreadNotifCount > 0) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError,
+                                            modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.extraSmall)
+                                        ) {
+                                            Text(
+                                                if (state.unreadNotifCount > 99) "99+"
+                                                else state.unreadNotifCount.toString(),
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                    }
                                 }
-                                
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Overall Progress",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    LinearProgressIndicator(
-                                        progress = { uiState.completionPercentage / 100f },
-                                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                        color = Color(0xFFFBBF24),
-                                        trackColor = Color.White.copy(alpha = 0.2f)
-                                    )
-                                    Text(
-                                        "${uiState.doneTasks} of ${uiState.totalTasks} tasks completed",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        fontSize = 11.sp
-                                    )
+                            },
+                            content = {
+                                LiquidGlassCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    borderAlpha = 0.3f
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
+                                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                                drawArc(
+                                                    color = Color.White.copy(alpha = 0.15f),
+                                                    startAngle = 0f,
+                                                    sweepAngle = 360f,
+                                                    useCenter = false,
+                                                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                                )
+                                                drawArc(
+                                                    color = HighlightGold,
+                                                    startAngle = -90f,
+                                                    sweepAngle = (state.completionPercentage / 100f) * 360f,
+                                                    useCenter = false,
+                                                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                                )
+                                            }
+                                            Text(
+                                                "${state.completionPercentage}%",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                        
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "Overall Progress",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                            Spacer(Modifier.height(Spacing.extraSmall))
+                                            LinearProgressIndicator(
+                                                progress = { state.completionPercentage / 100f },
+                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                                color = HighlightGold,
+                                                trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                                            )
+                                            Text(
+                                                "${state.doneTasks} of ${state.totalTasks} tasks completed",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
                                 }
+                            }
+                        )
+                    }
+
+                    // Stat Cards Row
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                        ) {
+                            StatBox(Modifier.weight(1f), "Total", state.totalTasks.toString(), Icons.Default.Book, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary)
+                            StatBox(Modifier.weight(1f), "Done", state.doneTasks.toString(), Icons.Default.CheckCircle, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.secondary)
+                            StatBox(Modifier.weight(1f), "Active", state.activeTasks.toString(), Icons.Default.Schedule, MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.tertiary)
+                            StatBox(Modifier.weight(1f), "Due", state.dueTodayTasks.toString(), Icons.Default.Bolt, MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.error)
+                        }
+                    }
+
+                    // Start Focus Session Button
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
+                            FocusSessionButton(
+                                durationMins = state.pomodoroWorkDuration,
+                                onClick = { showFocusTimer = true }
+                            )
+                        }
+                    }
+
+                    // Upcoming Tasks Section Header
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Upcoming Tasks",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            TextButton(onClick = onNavigateToTasks) {
+                                Text("See all", color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
-                )
-            }
 
-            // Stat Cards Row
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatBox(Modifier.weight(1f), "Total", uiState.totalTasks.toString(), Icons.Default.Book, Color(0xFFF1EBE0), Color(0xFF8B7355))
-                    StatBox(Modifier.weight(1f), "Done", uiState.doneTasks.toString(), Icons.Default.CheckCircle, Color(0xFFE1F5EE), Color(0xFF10B981))
-                    StatBox(Modifier.weight(1f), "Active", uiState.activeTasks.toString(), Icons.Default.Schedule, Color(0xFFE6F1FB), Color(0xFF3B82F6))
-                    StatBox(Modifier.weight(1f), "Due Today", uiState.dueTodayTasks.toString(), Icons.Default.Bolt, Color(0xFFFAEEDA), Color(0xFFFBBF24))
-                }
-            }
-
-            // Start Focus Session Button
-            item {
-                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    FocusSessionButton(
-                        durationMins = uiState.pomodoroWorkDuration,
-                        onClick = { showFocusTimer = true }
-                    )
-                }
-            }
-
-            // Upcoming Tasks Section
-            item {
-                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Upcoming Tasks",
-                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp),
-                            fontWeight = FontWeight.Bold
-                        )
-                        TextButton(onClick = onNavigateToTasks) {
-                            Text("See all", color = GoldenSuedeDark)
+                    if (state.upcomingTasks.isEmpty()) {
+                        item {
+                            Text(
+                                "No upcoming tasks today",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = Spacing.normal)
+                            )
                         }
-                    }
-                    
-                    if (uiState.upcomingTasks.isEmpty()) {
-                        Text(
-                            "No upcoming tasks today",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MutedText,
-                            modifier = Modifier.padding(vertical = 16.dp)
-                        )
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            uiState.upcomingTasks.forEach { task ->
+                        items(items = state.upcomingTasks, key = { it.id }) { task ->
+                            Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
                                 TaskCard(
                                     task = task,
                                     onEdit = { 
                                         editingTaskId = task.id
                                         showAddBottomSheet = true 
                                     },
-                                    onDelete = { viewModel.deleteTask(task.id) },
+                                    onDelete = { deleteConfirmTaskId = task.id },
                                     onClick = { onNavigateToTaskDetail(task.id) }
                                 )
                             }
                         }
                     }
-                }
-            }
 
-            // Subject Progress Section
-            item {
-                Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Subject Progress",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = DarkText
-                        )
-                        TextButton(onClick = { /* Analytics */ }) {
-                            Text("Analytics", color = GoldenSuedeDark, style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    
-                    Spacer(Modifier.height(8.dp))
-                    
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E0D4))
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            uiState.subjectStats.forEach { stat ->
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Box(
-                                        Modifier
-                                            .size(8.dp)
-                                            .clip(CircleShape)
-                                            .background(stat.color)
-                                    )
-                                    Text(
-                                        stat.name, 
-                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                        modifier = Modifier.width(80.dp),
-                                        color = DarkText
-                                    )
-                                    LinearProgressIndicator(
-                                        progress = { stat.completionRate / 100f },
-                                        modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
-                                        color = stat.color,
-                                        trackColor = Color(0xFFF2EDE4)
-                                    )
-                                    Text(
-                                        "${stat.doneCount}/${stat.totalCount}", 
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = DarkText
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Smart Priority Shortcut
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.normal),
-                    onClick = onNavigateToSmartPriority,
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Row(
-                        modifier = Modifier.padding(Spacing.normal),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    // Subject Progress Section Header
+                    item {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-                        ) {
-                            Icon(
-                                Icons.Default.AutoAwesome, null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Column {
-                                Text(
-                                    "Smart Priority",
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-                                Text(
-                                    "AI akan urutkan tugasmu",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Icon(
-                            Icons.Default.ChevronRight, null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Streak Card
-            item {
-                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = HighlightGold.copy(alpha = 0.1f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = HighlightGold.copy(alpha = 0.2f)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text("🔥", fontSize = 20.sp)
+                            Text(
+                                "Subject Progress",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            TextButton(onClick = onNavigateToProgress) {
+                                Text("Details", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                    
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Column(modifier = Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.normal)) {
+                                state.subjectStats.forEach { stat ->
+                                    key(stat.name) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                                            Box(
+                                                Modifier
+                                                    .size(Spacing.small)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primary)
+                                            )
+                                            Text(
+                                                stat.name, 
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.width(80.dp),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            LinearProgressIndicator(
+                                                progress = { stat.completionRate / 100f },
+                                                modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
+                                                color = MaterialTheme.colorScheme.primary,
+                                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                            Text(
+                                                "${stat.doneCount}/${stat.totalCount}", 
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                                if (state.subjectStats.isEmpty()) {
+                                    Text(
+                                        "Belum ada data mata kuliah.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("7-Day Study Streak!", fontWeight = FontWeight.Bold, color = GoldenSuedeDark)
-                                Text("Keep it up — you're on a roll!", style = MaterialTheme.typography.bodySmall, color = GoldenSuedeDark.copy(alpha = 0.8f))
+                        }
+                    }
+
+                    // Smart Priority Shortcut
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.normal),
+                            onClick = onNavigateToSmartPriority,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Spacing.normal),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                                ) {
+                                    Icon(
+                                        Icons.Default.AutoAwesome, "AI Priority",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            "Smart Priority",
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                        Text(
+                                            "AI akan urutkan tugasmu",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    Icons.Default.ChevronRight, "Buka",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                            Icon(Icons.Default.AutoGraph, null, tint = Color(0xFFE85D35))
+                        }
+                    }
+
+                    // Progress Shortcut
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.normal),
+                            onClick = onNavigateToProgress,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            ),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(Spacing.normal),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Insights, "Statistik",
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Column {
+                                        Text(
+                                            "Progress",
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                        Text(
+                                            "Lihat statistik belajarmu",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    Icons.Default.ChevronRight, "Buka",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Streak Card
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.large,
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(Spacing.normal),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(40.dp),
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text("🔥", fontSize = 20.sp)
+                                        }
+                                    }
+                                    Spacer(Modifier.width(Spacing.normal))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Study Streak!", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                        Text("Keep it up — you're on a roll!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.AutoGraph, "Grafik Streak", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                         }
                     }
                 }
@@ -399,39 +484,60 @@ fun HomeScreen(
             }
         )
     }
+
+    if (deleteConfirmTaskId != null) {
+        AlertDialog(
+            onDismissRequest = { deleteConfirmTaskId = null },
+            title = { Text("Hapus Tugas") },
+            text = { Text("Apakah Anda yakin ingin menghapus tugas ini?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteConfirmTaskId?.let { viewModel.deleteTask(it) }
+                    deleteConfirmTaskId = null
+                }) {
+                    Text("Hapus", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteConfirmTaskId = null }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 fun StatBox(modifier: Modifier, label: String, value: String, icon: ImageVector, bgColor: Color, iconColor: Color) {
     Card(
         modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE8E0D4))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
-            modifier = Modifier.padding(10.dp).fillMaxSize(),
+            modifier = Modifier.padding(Spacing.small).fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
                 modifier = Modifier.size(32.dp),
-                shape = RoundedCornerShape(10.dp),
+                shape = MaterialTheme.shapes.small,
                 color = bgColor
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, tint = iconColor, modifier = Modifier.size(18.dp))
+                    Icon(icon, contentDescription = label, tint = iconColor, modifier = Modifier.size(18.dp))
                 }
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(Spacing.extraSmall))
             Text(
                 value, 
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), 
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C2416)
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color(0xFF888888))
+            Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -446,8 +552,8 @@ fun FocusSessionButton(durationMins: Int, onClick: () -> Unit) {
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(20.dp),
-                spotColor = Color(0xFFE85D35),
-                ambientColor = Color(0xFFE85D35)
+                spotColor = MaterialTheme.colorScheme.primary,
+                ambientColor = MaterialTheme.colorScheme.primary
             ),
         shape = RoundedCornerShape(20.dp),
         color = Color.Transparent
@@ -455,14 +561,14 @@ fun FocusSessionButton(durationMins: Int, onClick: () -> Unit) {
         Box(
             modifier = Modifier.fillMaxSize().background(
                 brush = Brush.horizontalGradient(
-                    colors = listOf(Color(0xFFFF6B4A), Color(0xFFE85D35))
+                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
                 )
             )
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 20.dp).fillMaxSize(),
+                modifier = Modifier.padding(horizontal = Spacing.normal).fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
             ) {
                 Surface(
                     modifier = Modifier.size(44.dp),
@@ -470,14 +576,14 @@ fun FocusSessionButton(durationMins: Int, onClick: () -> Unit) {
                     color = Color.White.copy(alpha = 0.25f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Timer, null, tint = Color.White)
+                        Icon(Icons.Default.Timer, contentDescription = "Fokus", tint = Color.White)
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Start Focus Session", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text("Pomodoro • $durationMins min work", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
                 }
-                Icon(Icons.Default.ChevronRight, null, tint = Color.White)
+                Icon(Icons.Default.ChevronRight, contentDescription = "Mulai", tint = Color.White)
             }
         }
     }

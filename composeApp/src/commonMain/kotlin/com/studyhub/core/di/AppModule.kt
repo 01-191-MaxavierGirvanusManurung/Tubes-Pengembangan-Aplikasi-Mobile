@@ -30,6 +30,7 @@ import com.studyhub.presentation.screens.ai.SmartPriorityViewModel
 import com.studyhub.presentation.screens.ai.SmartReminderViewModel
 import com.studyhub.presentation.screens.notification.NotifHistoryViewModel
 import com.studyhub.presentation.screens.pomodoro.PomodoroViewModel
+import com.studyhub.presentation.screens.progress.ProgressViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
@@ -122,6 +123,7 @@ val viewModelModule = module {
     viewModelOf(::NetworkViewModel)
     viewModelOf(::NotifHistoryViewModel)
     viewModelOf(::PomodoroViewModel)
+    viewModelOf(::ProgressViewModel)
 }
 
 // ==================== SHARED MODULES ====================

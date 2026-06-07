@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,8 +30,8 @@ fun CalendarDayCell(
             .clip(CircleShape)
             .background(
                 when {
-                    isToday -> Color(0xFF8B7040)
-                    isSelected -> Color(0xFFE8E0D4)
+                    isToday -> MaterialTheme.colorScheme.primary
+                    isSelected -> MaterialTheme.colorScheme.primaryContainer
                     else -> Color.Transparent
                 }
             )
@@ -47,8 +46,9 @@ fun CalendarDayCell(
                     fontSize = 12.sp
                 ),
                 color = when {
-                    isToday -> Color.White
-                    else -> Color(0xFF2C2416)
+                    isToday -> MaterialTheme.colorScheme.onPrimary
+                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.onSurface
                 }
             )
             if (hasTask) {
@@ -57,7 +57,10 @@ fun CalendarDayCell(
                         .padding(top = 2.dp)
                         .size(4.dp)
                         .clip(CircleShape)
-                        .background(if (isToday) Color.White else Color(0xFF8B7040))
+                        .background(
+                            if (isToday) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.primary
+                        )
                 )
             }
         }

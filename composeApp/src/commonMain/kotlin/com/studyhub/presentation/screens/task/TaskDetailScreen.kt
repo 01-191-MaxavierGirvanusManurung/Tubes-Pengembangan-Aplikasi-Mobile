@@ -13,13 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
-import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.core.util.formatTimeOnly
 import com.studyhub.presentation.screens.ai.SmartReminderUiState
@@ -37,9 +37,10 @@ fun TaskDetailScreen(
     navController: NavController,
     viewModel: TaskDetailViewModel = koinViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showEditBottomSheet by remember { mutableStateOf(false) }
     var showSmartReminderSheet by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(taskId) {
         viewModel.loadTask(taskId)
@@ -56,18 +57,18 @@ fun TaskDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Task Detail", fontWeight = FontWeight.Bold) },
+                title = { Text("Detail Tugas", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showEditBottomSheet = true }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
-                    IconButton(onClick = { viewModel.deleteTask(taskId) }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    IconButton(onClick = { showDeleteConfirm = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.error)
                     }
                 }
             )
@@ -93,7 +94,7 @@ fun TaskDetailScreen(
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.titleMedium
                         )
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Spacing.normal))
                         Button(onClick = { navController.popBackStack() }) {
                             Text("Kembali")
                         }
@@ -104,12 +105,12 @@ fun TaskDetailScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(24.dp)
+                            .padding(Spacing.large)
                             .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                        verticalArrangement = Arrangement.spacedBy(Spacing.large)
                     ) {
                         // Title & Status
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,7 +118,7 @@ fun TaskDetailScreen(
                             ) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = MaterialTheme.shapes.small
                                 ) {
                                     Text(
                                         text = task.subject,
@@ -129,20 +130,20 @@ fun TaskDetailScreen(
 
                                 Surface(
                                     color = when(task.priority) {
-                                        Priority.HIGH -> PriorityHigh.copy(alpha = 0.1f)
-                                        Priority.MEDIUM -> PriorityMedium.copy(alpha = 0.1f)
-                                        Priority.LOW -> PriorityLow.copy(alpha = 0.1f)
+                                        Priority.HIGH -> MaterialTheme.colorScheme.errorContainer
+                                        Priority.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer
+                                        Priority.LOW -> MaterialTheme.colorScheme.tertiaryContainer
                                     },
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = MaterialTheme.shapes.small
                                 ) {
                                     Text(
                                         text = task.priority.name,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = when(task.priority) {
-                                            Priority.HIGH -> PriorityHigh
-                                            Priority.MEDIUM -> PriorityMedium
-                                            Priority.LOW -> PriorityLow
+                                            Priority.HIGH -> MaterialTheme.colorScheme.onErrorContainer
+                                            Priority.MEDIUM -> MaterialTheme.colorScheme.onSecondaryContainer
+                                            Priority.LOW -> MaterialTheme.colorScheme.onTertiaryContainer
                                         }
                                     )
                                 }
@@ -151,12 +152,13 @@ fun TaskDetailScreen(
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null
                             )
                         }
 
                         // Status Badge
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.normal)) {
                             Icon(
                                 imageVector = when(task.status) {
                                     TaskStatus.TODO -> Icons.Default.Description
@@ -181,10 +183,10 @@ fun TaskDetailScreen(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(Spacing.small))
                             Text("Smart Reminder")
                         }
 
@@ -192,23 +194,23 @@ fun TaskDetailScreen(
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = MaterialTheme.shapes.large
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                                modifier = Modifier.padding(Spacing.normal).fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("Due Date", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp))
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Text("Batas Waktu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                        Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                         Text(formatDate(task.dueDate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                                     }
                                 }
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("Deadline Time", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp))
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Text("Jam", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                        Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                                         Text(Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                                     }
                                 }
@@ -216,16 +218,16 @@ fun TaskDetailScreen(
                         }
 
                         // Description Section
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                             Text(
-                                text = "Description",
+                                text = "Deskripsi",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = task.description.ifBlank { "No description provided." },
+                                text = task.description.ifBlank { "Tidak ada deskripsi." },
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = if (task.description.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
+                                color = if (task.description.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 24.sp
                             )
                         }
@@ -248,6 +250,27 @@ fun TaskDetailScreen(
             taskId = taskId,
             onDismiss = { showSmartReminderSheet = false },
             onSetReminder = { /* TODO: Implement persistent reminder storage if needed */ }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Hapus Tugas") },
+            text = { Text("Apakah Anda yakin ingin menghapus tugas ini? Tindakan ini tidak dapat dibatalkan.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteTask(taskId)
+                    showDeleteConfirm = false
+                }) {
+                    Text("Hapus", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Batal")
+                }
+            }
         )
     }
 }

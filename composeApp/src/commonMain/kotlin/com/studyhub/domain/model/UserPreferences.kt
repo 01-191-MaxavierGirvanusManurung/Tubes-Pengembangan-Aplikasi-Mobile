@@ -1,5 +1,8 @@
 package com.studyhub.domain.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 data class UserPreferences(
     val userName: String = "Pelajar",
     val isDarkMode: Boolean = false,

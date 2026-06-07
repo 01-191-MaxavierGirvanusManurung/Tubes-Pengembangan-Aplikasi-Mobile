@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.studyhub.core.util.atEndOfDayMillis
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.domain.model.UserPreferences
 import com.studyhub.domain.usecase.notification.GetUnreadCountUseCase
 import com.studyhub.domain.usecase.preferences.GetUserPreferencesUseCase
 import com.studyhub.domain.usecase.task.DeleteTaskUseCase
@@ -29,21 +28,23 @@ data class SubjectHomeStat(
     val color: Color
 )
 
-data class HomeUiState(
-    val userName: String = "Pelajar",
-    val todayTasksCount: Int = 0,
-    val totalTasks: Int = 0,
-    val doneTasks: Int = 0,
-    val activeTasks: Int = 0,
-    val dueTodayTasks: Int = 0,
-    val completionPercentage: Int = 0,
-    val upcomingTasks: List<Task> = emptyList(),
-    val subjectStats: List<SubjectHomeStat> = emptyList(),
-    val pomodoroWorkDuration: Int = 25,
-    val unreadNotifCount: Int = 0,
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+sealed interface HomeUiState {
+    object Loading : HomeUiState
+    data class Success(
+        val userName: String,
+        val todayTasksCount: Int,
+        val totalTasks: Int,
+        val doneTasks: Int,
+        val activeTasks: Int,
+        val dueTodayTasks: Int,
+        val completionPercentage: Int,
+        val upcomingTasks: List<Task>,
+        val subjectStats: List<SubjectHomeStat>,
+        val pomodoroWorkDuration: Int,
+        val unreadNotifCount: Int
+    ) : HomeUiState
+    data class Error(val message: String) : HomeUiState
+}
 
 class HomeViewModel(
     private val getActiveTasksUseCase: GetActiveTasksUseCase,
@@ -59,75 +60,75 @@ class HomeViewModel(
     private val today = localNow.date
 
     private val _unreadCount = MutableStateFlow(0)
-    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
 
     fun loadUnreadCount() {
         viewModelScope.launch {
             try {
-                println("HomeViewModel: Loading unread count...")
                 val count = getUnreadCountUseCase()
-                println("HomeViewModel: Unread count = $count")
                 _unreadCount.value = count
             } catch (e: Exception) {
-                println("HomeViewModel: Error loading unread count: ${e.message}")
+                // Silently fail or log for polish
             }
         }
     }
 
-    // Combine all data sources into a single reactive UI State
     val uiState: StateFlow<HomeUiState> = combine(
-        getUserPreferencesUseCase().distinctUntilChanged(),
-        getAllTasksUseCase().distinctUntilChanged(),
-        getActiveTasksUseCase().distinctUntilChanged(),
-        getTasksByDateUseCase(today).distinctUntilChanged(),
+        getUserPreferencesUseCase(),
+        getAllTasksUseCase(),
+        getActiveTasksUseCase(),
+        getTasksByDateUseCase(today),
         _unreadCount
     ) { prefs, allTasks, allActive, todayTasks, unread ->
-        val startOfTomorrow = today.atEndOfDayMillis() + 1
-        
-        val doneCount = allTasks.count { it.status == TaskStatus.DONE && !it.isDeleted }
-        val totalCount = allTasks.count { !it.isDeleted }
-        val activeCount = allActive.size
-        val dueTodayCount = todayTasks.count { it.status != TaskStatus.DONE }
-        
-        val completionPct = if (totalCount > 0) (doneCount * 100) / totalCount else 0
-        
-        val upcoming = allActive
-            .filter { it.dueDate >= startOfTomorrow }
-            .sortedBy { it.dueDate }
-            .take(4)
+        try {
+            val startOfTomorrow = today.atEndOfDayMillis() + 1
 
-        val subjects = allTasks.map { it.subject }.distinct()
-        val stats = subjects.map { s ->
-            val subTasks = allTasks.filter { it.subject == s && !it.isDeleted }
-            val subDone = subTasks.count { it.status == TaskStatus.DONE }
-            val subTotal = subTasks.size
-            SubjectHomeStat(
-                name = s,
-                doneCount = subDone,
-                totalCount = subTotal,
-                completionRate = if (subTotal > 0) (subDone * 100) / subTotal else 0,
-                color = getSubjectColor(s)
+            val validAllTasks = allTasks.filter { !it.isDeleted }
+            val doneCount = validAllTasks.count { it.status == TaskStatus.DONE }
+            val totalCount = validAllTasks.size
+            val activeCount = allActive.size
+            val dueTodayCount = todayTasks.count { it.status != TaskStatus.DONE }
+
+            val completionPct = if (totalCount > 0) (doneCount * 100) / totalCount else 0
+
+            val upcoming = allActive
+                .filter { it.dueDate >= startOfTomorrow }
+                .sortedBy { it.dueDate }
+                .take(4)
+
+            val subjects = validAllTasks.map { it.subject }.distinct()
+            val stats = subjects.map { s ->
+                val subTasks = validAllTasks.filter { it.subject == s }
+                val subDone = subTasks.count { it.status == TaskStatus.DONE }
+                val subTotal = subTasks.size
+                SubjectHomeStat(
+                    name = s,
+                    doneCount = subDone,
+                    totalCount = subTotal,
+                    completionRate = if (subTotal > 0) (subDone * 100) / subTotal else 0,
+                    color = Color.Transparent // Will be assigned in UI or kept dynamic
+                )
+            }.sortedByDescending { it.totalCount }
+
+            HomeUiState.Success(
+                userName = prefs.userName,
+                pomodoroWorkDuration = prefs.pomodoroFocusDuration,
+                todayTasksCount = dueTodayCount,
+                totalTasks = totalCount,
+                doneTasks = doneCount,
+                activeTasks = activeCount,
+                dueTodayTasks = dueTodayCount,
+                completionPercentage = completionPct,
+                upcomingTasks = upcoming,
+                subjectStats = stats,
+                unreadNotifCount = unread
             )
-        }.sortedByDescending { it.totalCount }
-
-        HomeUiState(
-            userName = prefs.userName,
-            pomodoroWorkDuration = prefs.pomodoroFocusDuration,
-            todayTasksCount = dueTodayCount,
-            totalTasks = totalCount,
-            doneTasks = doneCount,
-            activeTasks = activeCount,
-            dueTodayTasks = dueTodayCount,
-            completionPercentage = completionPct,
-            upcomingTasks = upcoming,
-            subjectStats = stats,
-            unreadNotifCount = unread,
-            isLoading = false
-        )
+        } catch (e: Exception) {
+            HomeUiState.Error(e.message ?: "Terjadi kesalahan saat memuat data")
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = HomeUiState(isLoading = true)
+        initialValue = HomeUiState.Loading
     )
 
     init {
@@ -136,16 +137,11 @@ class HomeViewModel(
 
     fun deleteTask(taskId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteTaskUseCase(taskId)
+            try {
+                deleteTaskUseCase(taskId)
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
-}
-
-private fun getSubjectColor(subject: String): Color {
-    val hash = subject.hashCode()
-    val colors = listOf(
-        Color(0xFF7B6FA0), Color(0xFF6B8F71), Color(0xFF8B7355),
-        Color(0xFFC06C84), Color(0xFF355C7D), Color(0xFFF67280), Color(0xFF45B7D1)
-    )
-    return colors[kotlin.math.abs(hash) % colors.size]
 }

@@ -19,6 +19,7 @@ sealed interface NotifHistoryUiState {
         val unreadCount: Int
     ) : NotifHistoryUiState
     object Empty : NotifHistoryUiState
+    data class Error(val message: String) : NotifHistoryUiState
 }
 
 class NotifHistoryViewModel(
@@ -31,13 +32,6 @@ class NotifHistoryViewModel(
     private val _uiState = MutableStateFlow<NotifHistoryUiState>(NotifHistoryUiState.Loading)
     val uiState: StateFlow<NotifHistoryUiState> = _uiState.asStateFlow()
 
-    private val _unreadCount = MutableStateFlow(0)
-    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
-
-    init {
-        loadUnreadCount()
-    }
-
     fun loadHistory() {
         viewModelScope.launch {
             _uiState.value = NotifHistoryUiState.Loading
@@ -49,40 +43,34 @@ class NotifHistoryViewModel(
                 else
                     NotifHistoryUiState.Success(items, count)
             } catch (e: Exception) {
-                _uiState.value = NotifHistoryUiState.Empty
+                _uiState.value = NotifHistoryUiState.Error(e.message ?: "Gagal memuat riwayat")
             }
         }
     }
 
     fun markAllRead() {
         viewModelScope.launch {
-            markNotifReadUseCase()
-            loadHistory()
-            loadUnreadCount()
+            try {
+                markNotifReadUseCase()
+                loadHistory()
+            } catch (e: Exception) { }
         }
     }
 
     fun deleteItem(id: String) {
         viewModelScope.launch {
-            deleteNotifHistoryUseCase(id)
-            loadHistory()
-            loadUnreadCount()
+            try {
+                deleteNotifHistoryUseCase(id)
+                loadHistory()
+            } catch (e: Exception) { }
         }
     }
 
     fun clearAll() {
         viewModelScope.launch {
-            deleteNotifHistoryUseCase()
-            loadHistory()
-            loadUnreadCount()
-        }
-    }
-
-    private fun loadUnreadCount() {
-        viewModelScope.launch {
             try {
-                val count = getUnreadCountUseCase()
-                _unreadCount.value = count
+                deleteNotifHistoryUseCase()
+                loadHistory()
             } catch (e: Exception) { }
         }
     }

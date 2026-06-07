@@ -2,7 +2,6 @@ package com.studyhub.presentation.screens.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.studyhub.core.util.atEndOfDayMillis
 import com.studyhub.core.util.toLocalDate
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
@@ -19,15 +18,17 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-data class CalendarUiState(
-    val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
-    val tasksOnSelectedDate: List<Task> = emptyList(),
-    val taskDates: Set<LocalDate> = emptySet(),
-    val upcomingMonthTasks: List<Task> = emptyList(),
-    val upcomingDeadlinesCount: Int = 0,
-    val allTasks: List<Task> = emptyList(),
-    val isLoading: Boolean = false
-)
+sealed interface CalendarUiState {
+    object Loading : CalendarUiState
+    data class Success(
+        val selectedDate: LocalDate,
+        val tasksOnSelectedDate: List<Task>,
+        val taskDates: Set<LocalDate>,
+        val upcomingMonthTasks: List<Task>,
+        val upcomingDeadlinesCount: Int
+    ) : CalendarUiState
+    data class Error(val message: String) : CalendarUiState
+}
 
 class CalendarViewModel(
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
@@ -40,39 +41,40 @@ class CalendarViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<CalendarUiState> = combine(
-        getAllTasksUseCase().distinctUntilChanged(),
-        _selectedDate.flatMapLatest { getTasksByDateUseCase(it) }.distinctUntilChanged(),
+        getAllTasksUseCase(),
+        _selectedDate.flatMapLatest { getTasksByDateUseCase(it) },
         _selectedDate,
         _currentMonth
     ) { allTasks, tasksOnDate, selectedDate, currentMonth ->
-        
-        val datesWithTasks = allTasks.map { it.dueDate.toLocalDate() }.toSet()
-        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        
-        val upcomingCount = allTasks.count { 
-            it.status != TaskStatus.DONE && it.dueDate.toLocalDate() >= today 
+        try {
+            val datesWithTasks = allTasks.map { it.dueDate.toLocalDate() }.toSet()
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+            val upcomingCount = allTasks.count {
+                it.status != TaskStatus.DONE && it.dueDate.toLocalDate() >= today
+            }
+
+            val monthTasks = allTasks.filter {
+                val date = it.dueDate.toLocalDate()
+                date.month == currentMonth.month &&
+                date.year == currentMonth.year &&
+                it.status != TaskStatus.DONE
+            }.sortedBy { it.dueDate }
+
+            CalendarUiState.Success(
+                selectedDate = selectedDate,
+                tasksOnSelectedDate = tasksOnDate,
+                taskDates = datesWithTasks,
+                upcomingMonthTasks = monthTasks,
+                upcomingDeadlinesCount = upcomingCount
+            )
+        } catch (e: Exception) {
+            CalendarUiState.Error(e.message ?: "Terjadi kesalahan saat memuat kalender")
         }
-
-        val monthTasks = allTasks.filter {
-            val date = it.dueDate.toLocalDate()
-            date.month == currentMonth.month && 
-            date.year == currentMonth.year && 
-            it.status != TaskStatus.DONE
-        }.sortedBy { it.dueDate }
-
-        CalendarUiState(
-            selectedDate = selectedDate,
-            tasksOnSelectedDate = tasksOnDate,
-            taskDates = datesWithTasks,
-            upcomingMonthTasks = monthTasks,
-            upcomingDeadlinesCount = upcomingCount,
-            allTasks = allTasks,
-            isLoading = false
-        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = CalendarUiState(isLoading = true)
+        initialValue = CalendarUiState.Loading
     )
 
     fun updateMonthOverview(month: LocalDate) {
@@ -85,7 +87,11 @@ class CalendarViewModel(
 
     fun deleteTask(taskId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteTaskUseCase(taskId)
+            try {
+                deleteTaskUseCase(taskId)
+            } catch (e: Exception) {
+                // Silently fail or log for UI feedback if needed
+            }
         }
     }
 }

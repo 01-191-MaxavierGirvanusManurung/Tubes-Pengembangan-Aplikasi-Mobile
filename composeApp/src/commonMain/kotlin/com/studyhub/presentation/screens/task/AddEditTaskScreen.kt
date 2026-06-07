@@ -3,7 +3,8 @@ package com.studyhub.presentation.screens.task
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -12,7 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -34,6 +39,7 @@ fun AddEditTaskScreen(
 ) {
     val viewModel: AddEditTaskViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -75,7 +81,12 @@ fun AddEditTaskScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (taskId == null) "Tambah Tugas" else "Edit Tugas") },
+                title = { 
+                    Text(
+                        if (taskId == null) "Tambah Tugas" else "Edit Tugas",
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
@@ -94,13 +105,16 @@ fun AddEditTaskScreen(
         ) {
             AnimatedVisibility(visible = uiState.error != null) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = uiState.error ?: "",
                         color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(Spacing.medium)
+                        modifier = Modifier.padding(Spacing.medium),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
@@ -110,7 +124,14 @@ fun AddEditTaskScreen(
                 onValueChange = { title = it },
                 label = { Text("Judul") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                )
             )
 
             OutlinedTextField(
@@ -118,7 +139,14 @@ fun AddEditTaskScreen(
                 onValueChange = { description = it },
                 label = { Text("Deskripsi (Opsional)") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                minLines = 3,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
+                )
             )
 
             ExposedDropdownMenuBox(
@@ -131,7 +159,8 @@ fun AddEditTaskScreen(
                     readOnly = true,
                     label = { Text("Mata Kuliah") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSubjects) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedSubjects,
@@ -143,13 +172,18 @@ fun AddEditTaskScreen(
                             onClick = {
                                 selectedSubject = subject.name
                                 expandedSubjects = false
-                            }
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                         )
                     }
                 }
             }
 
-            Text("Prioritas", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Prioritas",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.small)
@@ -163,7 +197,11 @@ fun AddEditTaskScreen(
                 }
             }
 
-            Text("Status", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Status",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.small)
@@ -186,18 +224,27 @@ fun AddEditTaskScreen(
                 label = { Text("Tanggal Deadline") },
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, null)
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal")
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Estimasi Waktu: $estimatedMinutes menit", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "Estimasi Waktu: $estimatedMinutes menit",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Slider(
                 value = estimatedMinutes.toFloat(),
                 onValueChange = { estimatedMinutes = it.toInt() },
                 valueRange = 0f..240f,
-                steps = 23
+                steps = 23,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             )
 
             Spacer(Modifier.height(Spacing.large))
@@ -215,14 +262,21 @@ fun AddEditTaskScreen(
                         estimatedMinutes = estimatedMinutes
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = title.isNotBlank() && !uiState.isLoading,
-                shape = RoundedCornerShape(Spacing.small)
+                shape = MaterialTheme.shapes.medium
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
                 } else {
-                    Text(if (taskId == null) "Tambah Tugas" else "Simpan Perubahan")
+                    Text(
+                        if (taskId == null) "Tambah Tugas" else "Simpan Perubahan",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }

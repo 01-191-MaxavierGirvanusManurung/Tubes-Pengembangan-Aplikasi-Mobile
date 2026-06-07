@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,7 +35,7 @@ fun TaskCard(
     modifier: Modifier = Modifier
 ) {
     val isDone = task.status == TaskStatus.DONE
-    val now = Clock.System.now().toEpochMilliseconds()
+    val now = com.studyhub.core.util.currentTimeMillis()
     val isOverdue = !isDone && task.dueDate < now
     
     val statusIcon = when {
@@ -43,19 +44,19 @@ fun TaskCard(
         task.status == TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
         else -> Icons.Default.Schedule 
     }
+
     val statusColor = when {
-        isDone -> Color(0xFF10B981)
-        isOverdue -> Color(0xFFE24B4A)
-        task.status == TaskStatus.IN_PROGRESS -> Color(0xFF3B82F6)
-        else -> Color(0xFFBBBBBB)
+        isDone -> MaterialTheme.colorScheme.primary // Semantic: Success-ish
+        isOverdue -> MaterialTheme.colorScheme.error
+        task.status == TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.outline
     }
     
     val subjectAccentColor = when {
-        isOverdue -> Color(0xFFE24B4A)
-        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> Color(0xFF3B82F6)
-        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> Color(0xFF10B981)
-        task.subject.lowercase() == "physics" -> Color(0xFF0EA5E9)
-        else -> GoldenSuedeDark
+        isOverdue -> MaterialTheme.colorScheme.error
+        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> MaterialTheme.colorScheme.primary
+        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.tertiary
     }
 
     Card(
@@ -64,13 +65,15 @@ fun TaskCard(
             .wrapContentHeight()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isOverdue) Color(0xFFFFF5F5) else Color.White
+            containerColor = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+                             else MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         border = androidx.compose.foundation.BorderStroke(
             width = if (isOverdue) 1.5.dp else 1.dp,
-            color = if (isOverdue) Color(0xFFFCA5A5) else Color(0xFFE8E0D4)
+            color = if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.outlineVariant
         )
     ) {
         Row(
@@ -80,7 +83,7 @@ fun TaskCard(
             // Left Accent Strip
             Box(
                 modifier = Modifier
-                    .padding(vertical = 16.dp)
+                    .padding(vertical = Spacing.normal)
                     .width(4.dp)
                     .height(44.dp)
                     .clip(RoundedCornerShape(4.dp))
@@ -89,53 +92,52 @@ fun TaskCard(
             
             Row(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(Spacing.normal)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
             ) {
                 Icon(
                     imageVector = statusIcon,
-                    contentDescription = null,
+                    contentDescription = "Status: ${task.status.name}",
                     tint = statusColor,
                     modifier = Modifier.size(24.dp)
                 )
 
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)
                 ) {
                     Text(
                         text = task.title,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            textDecoration = if (isDone || isOverdue) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                            textDecoration = if (isDone) TextDecoration.LineThrough else null
                         ),
                         color = when {
-                            isDone -> MutedText
-                            isOverdue -> Color(0xFFB91C1C)
-                            else -> DarkText
+                            isDone -> MaterialTheme.colorScheme.onSurfaceVariant
+                            isOverdue -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurface
                         },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val (subjectBg, subjectText) = if (isOverdue) {
-                            Color(0xFFFEE2E2) to Color(0xFF991B1B)
-                        } else {
-                            Color(0xFFF1EBE0) to Color(0xFF7A5C2E)
-                        }
+                        val subjectBg = if (isOverdue) MaterialTheme.colorScheme.errorContainer
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                        val subjectText = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer
+                                          else MaterialTheme.colorScheme.onSurfaceVariant
+
                         TaskTag(task.subject, subjectBg, subjectText)
                         
                         val (priorityBg, priorityText) = when {
-                            isOverdue -> Color(0xFFFEE2E2) to Color(0xFF991B1B)
-                            task.priority == Priority.HIGH -> Color(0xFFFEECEC) to Color(0xFFA32D2D)
-                            task.priority == Priority.MEDIUM -> Color(0xFFFAEEDA) to Color(0xFF854F0B)
-                            else -> Color(0xFFE1F5EE) to Color(0xFF1B5E20)
+                            task.priority == Priority.HIGH -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+                            task.priority == Priority.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                            else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
                         }
                         TaskTag(task.priority.name.lowercase(), priorityBg, priorityText)
                     }
@@ -147,25 +149,35 @@ fun TaskCard(
                         deadline,
                         style = MaterialTheme.typography.labelSmall,
                         color = when {
-                            deadline == "Overdue" -> Color(0xFFE24B4A)
-                            deadline == "Tomorrow" -> Color(0xFFE85D35)
-                            else -> Color(0xFF888888)
+                            deadline == "Overdue" -> MaterialTheme.colorScheme.error
+                            deadline == "Tomorrow" -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF888888)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
                 Row {
                     IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Edit, null, tint = Color(0xFFBBBBBB), modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit Tugas",
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                     IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Delete, null, tint = Color(0xFFE24B4A), modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Hapus Tugas",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -181,7 +193,7 @@ fun TaskTag(text: String, containerColor: Color, textColor: Color) {
     ) {
         Text(
             text = text,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = Spacing.small, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
             color = textColor,
             fontWeight = FontWeight.Medium
@@ -198,7 +210,7 @@ fun TaskGridCard(
     modifier: Modifier = Modifier
 ) {
     val isDone = task.status == TaskStatus.DONE
-    val now = Clock.System.now().toEpochMilliseconds()
+    val now = com.studyhub.core.util.currentTimeMillis()
     val isOverdue = !isDone && task.dueDate < now
 
     val statusIcon = when {
@@ -208,18 +220,17 @@ fun TaskGridCard(
         else -> Icons.Default.Schedule
     }
     val statusColor = when {
-        isDone -> Color(0xFF10B981)
-        isOverdue -> Color(0xFFE24B4A)
-        task.status == TaskStatus.IN_PROGRESS -> Color(0xFF3B82F6)
-        else -> Color(0xFFBBBBBB)
+        isDone -> MaterialTheme.colorScheme.primary
+        isOverdue -> MaterialTheme.colorScheme.error
+        task.status == TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.outline
     }
     
     val subjectAccentColor = when {
-        isOverdue -> Color(0xFFE24B4A)
-        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> Color(0xFF3B82F6)
-        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> Color(0xFF10B981)
-        task.subject.lowercase() == "physics" -> Color(0xFF0EA5E9)
-        else -> GoldenSuedeDark
+        isOverdue -> MaterialTheme.colorScheme.error
+        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> MaterialTheme.colorScheme.primary
+        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.tertiary
     }
 
     Card(
@@ -228,18 +239,20 @@ fun TaskGridCard(
             .wrapContentHeight()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isOverdue) Color(0xFFFFF5F5) else Color.White
+            containerColor = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+                             else MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         border = androidx.compose.foundation.BorderStroke(
             width = if (isOverdue) 1.5.dp else 1.dp,
-            color = if (isOverdue) Color(0xFFFCA5A5) else Color(0xFFE8E0D4)
+            color = if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.outlineVariant
         )
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(Spacing.medium),
+            verticalArrangement = Arrangement.spacedBy(Spacing.small)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -249,7 +262,7 @@ fun TaskGridCard(
                 Box(
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(MaterialTheme.shapes.small)
                         .background(subjectAccentColor.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -263,7 +276,7 @@ fun TaskGridCard(
                 
                 Icon(
                     imageVector = statusIcon,
-                    contentDescription = null,
+                    contentDescription = "Status: ${task.status.name}",
                     tint = statusColor,
                     modifier = Modifier.size(18.dp)
                 )
@@ -273,13 +286,9 @@ fun TaskGridCard(
                 text = task.title,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    textDecoration = if (isDone || isOverdue) androidx.compose.ui.text.style.TextDecoration.LineThrough else null
+                    textDecoration = if (isDone) TextDecoration.LineThrough else null
                 ),
-                color = when {
-                    isDone -> MutedText
-                    isOverdue -> Color(0xFFB91C1C)
-                    else -> DarkText
-                },
+                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.defaultMinSize(minHeight = 36.dp)
@@ -291,29 +300,34 @@ fun TaskGridCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val deadline = formatDeadline(task.dueDate)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                     Text(
                         deadline,
                         style = MaterialTheme.typography.labelSmall,
                         color = when {
-                            deadline == "Overdue" -> Color(0xFFE24B4A)
-                            deadline == "Tomorrow" -> Color(0xFFE85D35)
-                            else -> Color(0xFF888888)
+                            deadline == "Overdue" -> MaterialTheme.colorScheme.error
+                            deadline == "Tomorrow" -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
-                    )
-                    Text(
-                        "• ${Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly()}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF888888)
                     )
                 }
                 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Edit, null, tint = Color(0xFFBBBBBB), modifier = Modifier.size(14.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                     IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Delete, null, tint = Color(0xFFE24B4A), modifier = Modifier.size(14.dp))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Hapus",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(14.dp)
+                        )
                     }
                 }
             }
@@ -321,14 +335,8 @@ fun TaskGridCard(
     }
 }
 
-private fun getPriorityColor(priority: Priority): Color = when (priority) {
-    Priority.HIGH -> PriorityHigh
-    Priority.MEDIUM -> PriorityMedium
-    Priority.LOW -> PriorityLow
-}
-
 fun formatDeadline(epochMillis: Long): String {
-    val now = Clock.System.now().toEpochMilliseconds()
+    val now = com.studyhub.core.util.currentTimeMillis()
     val diff = epochMillis - now
     val days = (diff / 86400000L).toInt()
     
