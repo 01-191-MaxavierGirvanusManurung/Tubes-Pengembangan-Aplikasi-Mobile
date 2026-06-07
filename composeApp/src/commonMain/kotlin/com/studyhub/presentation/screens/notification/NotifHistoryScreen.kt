@@ -96,7 +96,8 @@ fun NotifHistoryScreen(navController: NavController) {
                     ) {
                         items(
                             items = state.items,
-                            key = { it.id }
+                            key = { it.id },
+                            contentType = { "notification" }
                         ) { item ->
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->

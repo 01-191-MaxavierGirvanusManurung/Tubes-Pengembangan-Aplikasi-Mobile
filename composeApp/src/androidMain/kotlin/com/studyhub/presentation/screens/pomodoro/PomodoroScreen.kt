@@ -36,7 +36,7 @@ actual fun PomodoroScreen(
                     IconButton(onClick = {
                         navController.popBackStack()
                     }) {
-                        Icon(Icons.Default.ArrowBack, null)
+                        Icon(Icons.Default.ArrowBack, "Kembali")
                     }
                 }
             )
@@ -91,17 +91,17 @@ actual fun PomodoroScreen(
             // Controls
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.large)) {
                 FilledTonalIconButton(onClick = { viewModel.reset() }) {
-                    Icon(Icons.Default.Replay, null)
+                    Icon(Icons.Default.Replay, "Reset")
                 }
 
                 FloatingActionButton(
                     onClick = { if (uiState.isRunning) viewModel.pause() else viewModel.start() }
                 ) {
-                    Icon(if (uiState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow, null)
+                    Icon(if (uiState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow, if (uiState.isRunning) "Pause" else "Mulai")
                 }
 
                 FilledTonalIconButton(onClick = { viewModel.skipPhase() }) {
-                    Icon(Icons.Default.SkipNext, null)
+                    Icon(Icons.Default.SkipNext, "Lewati")
                 }
             }
         }

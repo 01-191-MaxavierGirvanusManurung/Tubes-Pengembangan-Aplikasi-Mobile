@@ -14,12 +14,13 @@ class PomodoroManager(
     private val notifHistoryRepository: NotifHistoryRepository,
     private val notificationManager: NotificationManager,
     private val getUserPreferencesUseCase: GetUserPreferencesUseCase,
-    private val getTaskByIdUseCase: GetTaskByIdUseCase
+    private val getTaskByIdUseCase: GetTaskByIdUseCase,
+    private val externalScope: CoroutineScope? = null
 ) {
     private val _state = MutableStateFlow(PomodoroState())
     val state: StateFlow<PomodoroState> = _state.asStateFlow()
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = externalScope ?: CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var timerJob: Job? = null
     private var transitionJob: Job? = null
     
@@ -88,6 +89,18 @@ class PomodoroManager(
         transitionJob?.cancel()
         scope.launch {
             handleTimerFinished()
+        }
+    }
+
+    fun linkTask(taskId: String?) {
+        scope.launch {
+            if (taskId == null) {
+                _state.update { it.copy(linkedTaskId = null, linkedTaskTitle = null) }
+            } else {
+                getTaskByIdUseCase(taskId).firstOrNull()?.let { task ->
+                    _state.update { it.copy(linkedTaskId = taskId, linkedTaskTitle = task.title) }
+                }
+            }
         }
     }
 

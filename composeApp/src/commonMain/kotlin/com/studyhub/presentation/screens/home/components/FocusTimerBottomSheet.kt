@@ -78,7 +78,7 @@ fun FocusTimerBottomSheet(
                     onClick = onDismiss,
                     modifier = Modifier.background(Color(0xFFF3F4F6), CircleShape)
                 ) {
-                    Icon(Icons.Default.Close, null, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Close, "Tutup", modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -183,7 +183,7 @@ fun FocusTimerBottomSheet(
                         .size(56.dp)
                         .background(Color(0xFFF3F4F6), CircleShape)
                 ) {
-                    Icon(Icons.Default.Refresh, null, tint = Color.Gray)
+                    Icon(Icons.Default.Refresh, "Reset", tint = Color.Gray)
                 }
 
                 Spacer(Modifier.width(24.dp))
@@ -201,7 +201,7 @@ fun FocusTimerBottomSheet(
                 ) {
                     Icon(
                         if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        null,
+                        if (state.isRunning) "Pause" else "Mulai",
                         tint = Color.White,
                         modifier = Modifier.size(42.dp)
                     )
@@ -218,7 +218,7 @@ fun FocusTimerBottomSheet(
                         .size(56.dp)
                         .background(Color(0xFFF3F4F6), CircleShape)
                 ) {
-                    Icon(Icons.Default.SkipNext, null, tint = Color.Gray)
+                    Icon(Icons.Default.SkipNext, "Lewati", tint = Color.Gray)
                 }
             }
 

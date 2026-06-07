@@ -14,6 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,6 +33,7 @@ fun TaskCard(
     task: Task,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onStatusChange: (TaskStatus) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -62,6 +66,10 @@ fun TaskCard(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
+            .semantics {
+                role = androidx.compose.ui.semantics.Role.Button
+                contentDescription = "Tugas: ${task.title}, Matkul: ${task.subject}"
+            }
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (isOverdue) Color(0xFFFFF5F5) else Color.White
@@ -94,12 +102,19 @@ fun TaskCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = statusIcon,
-                    contentDescription = null,
-                    tint = statusColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                IconButton(
+                    onClick = { 
+                        onStatusChange(if (isDone) TaskStatus.TODO else TaskStatus.DONE) 
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = statusIcon,
+                        contentDescription = "Ubah status tugas",
+                        tint = statusColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
                 Column(
                     modifier = Modifier.weight(1f),
@@ -143,6 +158,21 @@ fun TaskCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     val deadline = formatDeadline(task.dueDate)
+                    
+                    androidx.compose.animation.AnimatedVisibility(visible = isOverdue) {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                "Terlambat",
+                                modifier = Modifier.padding(horizontal = Spacing.small, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+
                     Text(
                         deadline,
                         style = MaterialTheme.typography.labelSmall,
@@ -162,10 +192,10 @@ fun TaskCard(
                 
                 Row {
                     IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Edit, null, tint = Color(0xFFBBBBBB), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Edit, "Edit tugas", tint = Color(0xFFBBBBBB), modifier = Modifier.size(18.dp))
                     }
                     IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Delete, null, tint = Color(0xFFE24B4A), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Delete, "Hapus tugas", tint = Color(0xFFE24B4A), modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -194,6 +224,7 @@ fun TaskGridCard(
     task: Task,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onStatusChange: (TaskStatus) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -226,6 +257,10 @@ fun TaskGridCard(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
+            .semantics {
+                role = androidx.compose.ui.semantics.Role.Button
+                contentDescription = "Tugas: ${task.title}, Matkul: ${task.subject}"
+            }
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (isOverdue) Color(0xFFFFF5F5) else Color.White
@@ -261,12 +296,19 @@ fun TaskGridCard(
                     )
                 }
                 
-                Icon(
-                    imageVector = statusIcon,
-                    contentDescription = null,
-                    tint = statusColor,
-                    modifier = Modifier.size(18.dp)
-                )
+                IconButton(
+                    onClick = { 
+                        onStatusChange(if (isDone) TaskStatus.TODO else TaskStatus.DONE) 
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = statusIcon,
+                        contentDescription = "Ubah status tugas",
+                        tint = statusColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
             
             Text(
@@ -310,10 +352,10 @@ fun TaskGridCard(
                 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Edit, null, tint = Color(0xFFBBBBBB), modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Edit, "Edit tugas", tint = Color(0xFFBBBBBB), modifier = Modifier.size(14.dp))
                     }
                     IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Default.Delete, null, tint = Color(0xFFE24B4A), modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.Delete, "Hapus tugas", tint = Color(0xFFE24B4A), modifier = Modifier.size(14.dp))
                     }
                 }
             }

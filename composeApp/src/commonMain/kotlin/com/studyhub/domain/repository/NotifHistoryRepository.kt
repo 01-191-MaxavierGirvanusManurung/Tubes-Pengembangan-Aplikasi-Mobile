@@ -15,4 +15,9 @@ interface NotifHistoryRepository {
     suspend fun markRead(id: String)
     suspend fun deleteItem(id: String)
     suspend fun clearAll()
+    suspend fun deleteOlderThan(timestamp: Long): Int
+    suspend fun deleteExcessItems(max: Int): Int
+    suspend fun runAutoCleanupIfNeeded(): CleanupResult
 }
+
+data class CleanupResult(val wasRun: Boolean, val deletedCount: Int)

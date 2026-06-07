@@ -1,5 +1,8 @@
 package com.studyhub.domain.model
 
+import androidx.compose.runtime.Stable
+
+@Stable
 data class ReminderInfo(
     val taskId: String,
     val scheduledAt: Long,
@@ -8,6 +11,7 @@ data class ReminderInfo(
     val createdAt: Long
 )
 
+@Stable
 data class NotifHistoryItem(
     val id: String,
     val taskId: String,
@@ -18,6 +22,7 @@ data class NotifHistoryItem(
     val isRead: Boolean
 )
 
+@Stable
 data class NotificationSettings(
     val isEnabled: Boolean = true,
     val isAiReminderEnabled: Boolean = true,
