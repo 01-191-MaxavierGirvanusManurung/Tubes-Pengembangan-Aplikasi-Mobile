@@ -82,34 +82,19 @@ fun TasksScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(Spacing.normal)
-            ) {
-                ExtendedFloatingActionButton(
-                    onClick = onNavigateToSmartPriority,
-                    icon = {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
-                    },
-                    text = { Text("AI Priority") },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    expanded = !listState.isScrollInProgress
-                )
 
-                FloatingActionButton(
-                    onClick = { 
-                        editingTaskId = null
-                        showAddBottomSheet = true 
-                    },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape,
-                    modifier = Modifier.size(56.dp),
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah tugas")
-                }
+            FloatingActionButton(
+                onClick = {
+                    editingTaskId = null
+                    showAddBottomSheet = true
+                },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+                modifier = Modifier.size(56.dp),
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Tambah tugas")
             }
         }
     ) { padding ->
