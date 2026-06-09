@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
 }
 
 detekt {
@@ -96,6 +97,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
+            implementation(libs.datastore.preferences.core)
         }
         
         androidMain.dependencies {

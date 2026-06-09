@@ -5,10 +5,23 @@ import com.studyhub.domain.model.NotifHistoryItem
 import com.studyhub.core.util.currentTimeMillis
 import com.studyhub.core.util.uuid
 
-class NotifHistoryDataSource(
+interface NotifHistoryDataSource {
+    fun getAll(): List<NotifHistoryItem>
+    fun getUnreadCount(): Int
+    fun insert(taskId: String, taskTitle: String, taskSubject: String, aiReason: String)
+    fun markAllRead()
+    fun markRead(id: String)
+    fun deleteById(id: String)
+    fun deleteAll()
+    fun getCount(): Int
+    fun deleteOlderThan(timestamp: Long)
+    fun deleteExcessItems(max: Int)
+}
+
+class SqlDelightNotifHistoryDataSource(
     private val database: StudyHubDatabase
-) {
-    fun getAll(): List<NotifHistoryItem> = try {
+) : NotifHistoryDataSource {
+    override fun getAll(): List<NotifHistoryItem> = try {
         database.notifHistoryEntityQueries.selectAll()
             .executeAsList()
             .map {
@@ -20,12 +33,12 @@ class NotifHistoryDataSource(
             }
     } catch (e: Exception) { emptyList() }
 
-    fun getUnreadCount(): Int = try {
+    override fun getUnreadCount(): Int = try {
         database.notifHistoryEntityQueries.selectUnreadCount()
             .executeAsOne().toInt()
     } catch (e: Exception) { 0 }
 
-    fun insert(
+    override fun insert(
         taskId: String, taskTitle: String,
         taskSubject: String, aiReason: String
     ) = try {
@@ -34,25 +47,33 @@ class NotifHistoryDataSource(
             taskId, taskTitle, taskSubject,
             aiReason, currentTimeMillis()
         )
-        println("Successfully inserted to NotifHistoryEntity: $taskTitle")
-    } catch (e: Exception) {
-        println("Error inserting to NotifHistoryEntity: ${e.message}")
-        e.printStackTrace()
-    }
+    } catch (e: Exception) { }
 
-    fun markAllRead() = try {
+    override fun markAllRead() = try {
         database.notifHistoryEntityQueries.markAllRead()
     } catch (e: Exception) { }
 
-    fun markRead(id: String) = try {
+    override fun markRead(id: String) = try {
         database.notifHistoryEntityQueries.markRead(id)
     } catch (e: Exception) { }
 
-    fun deleteById(id: String) = try {
+    override fun deleteById(id: String) = try {
         database.notifHistoryEntityQueries.deleteById(id)
     } catch (e: Exception) { }
 
-    fun deleteAll() = try {
+    override fun deleteAll() = try {
         database.notifHistoryEntityQueries.deleteAll()
+    } catch (e: Exception) { }
+
+    override fun getCount(): Int = try {
+        database.notifHistoryEntityQueries.countAll().executeAsOne().toInt()
+    } catch (e: Exception) { 0 }
+
+    override fun deleteOlderThan(timestamp: Long) = try {
+        database.notifHistoryEntityQueries.deleteOlderThan(timestamp)
+    } catch (e: Exception) { }
+
+    override fun deleteExcessItems(max: Int) = try {
+        database.notifHistoryEntityQueries.deleteExcessItems(max.toLong())
     } catch (e: Exception) { }
 }

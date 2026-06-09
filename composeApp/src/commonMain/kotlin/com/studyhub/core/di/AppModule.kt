@@ -9,7 +9,6 @@ import com.studyhub.data.sync.SyncManager
 import com.studyhub.core.manager.PomodoroManager
 import com.studyhub.data.remote.GroqApiClient
 import com.studyhub.domain.repository.*
-import com.studyhub.core.util.NetworkMonitor
 import com.studyhub.presentation.navigation.NetworkViewModel
 import com.studyhub.domain.usecase.task.*
 import com.studyhub.domain.usecase.subject.*
@@ -31,7 +30,6 @@ import com.studyhub.presentation.screens.ai.SmartReminderViewModel
 import com.studyhub.presentation.screens.notification.NotifHistoryViewModel
 import com.studyhub.presentation.screens.pomodoro.PomodoroViewModel
 import com.studyhub.presentation.screens.progress.ProgressViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
@@ -54,7 +52,7 @@ val databaseModule = module {
     single { AiCacheDataSource(get()) }
     single { SyncQueueDataSource(get()) }
     single { ReminderDataSource(get()) }
-    single { NotifHistoryDataSource(get()) }
+    single<NotifHistoryDataSource> { SqlDelightNotifHistoryDataSource(get()) }
     single { PomodoroDataSource(get()) }
     single { SyncManager(get(), get(), get()) }
     single { PomodoroManager(get(), get(), get(), get(), get()) }
@@ -73,7 +71,7 @@ val repositoryModule = module {
     single<SubjectRepository> { SubjectRepositoryImpl(get()) }
     single<PreferencesRepository> { PreferencesRepositoryImpl(get()) }
     single<AiRepository> { AiRepositoryImpl(get(), get()) }
-    single<NotifHistoryRepository> { NotifHistoryRepositoryImpl(get()) }
+    single<NotifHistoryRepository> { NotifHistoryRepositoryImpl(get(), get()) }
     single<PomodoroRepository> { PomodoroRepositoryImpl(get()) }
 }
 
@@ -112,11 +110,7 @@ val useCaseModule = module {
 // ==================== VIEWMODEL MODULE ====================
 
 val viewModelModule = module {
-    viewModel {
-        HomeViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get()
-        )
-    }
+    viewModelOf(::HomeViewModel)
     viewModelOf(::AddEditTaskViewModel)
     viewModelOf(::TasksViewModel)
     viewModelOf(::TaskDetailViewModel)

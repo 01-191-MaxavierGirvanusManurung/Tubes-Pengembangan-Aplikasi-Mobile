@@ -5,8 +5,8 @@ import androidx.datastore.preferences.core.*
 import com.studyhub.domain.model.UserPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.io.IOException
 
 object PreferencesKeys {
     val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
@@ -21,6 +21,9 @@ object PreferencesKeys {
     val POMODORO_SESSIONS_BEFORE_LONG = intPreferencesKey("pomodoro_sessions_before_long")
     val CURRENT_STREAK = intPreferencesKey("current_streak")
     val LAST_USAGE_TIMESTAMP = longPreferencesKey("last_usage_timestamp")
+    val NOTIF_AUTO_DELETE_ENABLED = booleanPreferencesKey("notif_auto_delete_enabled")
+    val NOTIF_MAX_HISTORY_COUNT = intPreferencesKey("notif_max_history_count")
+    val LAST_NOTIF_CLEANUP = longPreferencesKey("last_notif_cleanup")
 }
 
 class PreferencesDataSource(
@@ -28,10 +31,7 @@ class PreferencesDataSource(
 ) {
     // ── Dark Mode ──
     val isDarkMode: Flow<Boolean> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.IS_DARK_MODE] ?: false
         }
@@ -44,10 +44,7 @@ class PreferencesDataSource(
 
     // ── User Name ──
     val userName: Flow<String> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.USER_NAME] ?: "Pelajar"
         }
@@ -60,10 +57,7 @@ class PreferencesDataSource(
 
     // ── Notification ──
     val notificationEnabled: Flow<Boolean> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.NOTIFICATION_ENABLED] ?: true
         }
@@ -76,10 +70,7 @@ class PreferencesDataSource(
 
     // ── AI Reminder ──
     val isAiReminderEnabled: Flow<Boolean> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.IS_AI_REMINDER] ?: true
         }
@@ -92,28 +83,19 @@ class PreferencesDataSource(
 
     // ── Pomodoro ──
     val pomodoroFocus: Flow<Int> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.POMODORO_FOCUS] ?: 25
         }
 
     val pomodoroShortBreak: Flow<Int> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.POMODORO_SHORT_BREAK] ?: 5
         }
 
     val pomodoroLongBreak: Flow<Int> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             prefs[PreferencesKeys.POMODORO_LONG_BREAK] ?: 15
         }
@@ -135,12 +117,32 @@ class PreferencesDataSource(
         }
     }
 
+    // ── Notification History Cleanup ──
+    val notifAutoDeleteEnabled: Flow<Boolean> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs ->
+            prefs[PreferencesKeys.NOTIF_AUTO_DELETE_ENABLED] ?: true
+        }
+
+    val notifMaxHistoryCount: Flow<Int> = dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { prefs ->
+            prefs[PreferencesKeys.NOTIF_MAX_HISTORY_COUNT] ?: 50
+        }
+
+    suspend fun getLastNotifCleanup(): Long {
+        return dataStore.data.first()[PreferencesKeys.LAST_NOTIF_CLEANUP] ?: 0L
+    }
+
+    suspend fun setLastNotifCleanup(timestamp: Long) {
+        dataStore.edit { prefs ->
+            prefs[PreferencesKeys.LAST_NOTIF_CLEANUP] = timestamp
+        }
+    }
+
     // ── Get all as UserPreferences snapshot ──
     val userPreferences: Flow<UserPreferences> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) emit(emptyPreferences())
-            else throw exception
-        }
+        .catch { emit(emptyPreferences()) }
         .map { prefs ->
             UserPreferences(
                 userName = prefs[PreferencesKeys.USER_NAME] ?: "Pelajar",

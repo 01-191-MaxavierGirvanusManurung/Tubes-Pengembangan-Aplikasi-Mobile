@@ -32,3 +32,17 @@ DELETE FROM NotifHistoryEntity WHERE id = ?;
 
 deleteAll:
 DELETE FROM NotifHistoryEntity;
+
+countAll:
+SELECT COUNT(*) FROM NotifHistoryEntity;
+
+deleteOlderThan:
+DELETE FROM NotifHistoryEntity WHERE sentAt < ?;
+
+deleteExcessItems:
+DELETE FROM NotifHistoryEntity
+WHERE id IN (
+    SELECT id FROM NotifHistoryEntity
+    ORDER BY sentAt ASC
+    LIMIT (MAX(0, (SELECT COUNT(*) FROM NotifHistoryEntity) - ?))
+);
