@@ -12,6 +12,7 @@ import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
+import com.studyhub.domain.repository.PreferencesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.*
@@ -46,14 +47,23 @@ sealed interface HomeUiState {
     data class Error(val message: String) : HomeUiState
 }
 
+sealed interface HomeUiEvent {
+    data class ShowStreakPopup(val streak: Int) : HomeUiEvent
+}
+
 class HomeViewModel(
     private val getActiveTasksUseCase: GetActiveTasksUseCase,
     private val getAllTasksUseCase: GetAllTasksUseCase,
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
     private val getUserPreferencesUseCase: GetUserPreferencesUseCase,
-    private val getUnreadCountUseCase: GetUnreadCountUseCase
+    private val getUnreadCountUseCase: GetUnreadCountUseCase,
+    private val preferencesRepository: PreferencesRepository,
+    private val scheduleSmartReminderUseCase: com.studyhub.domain.usecase.notification.ScheduleSmartReminderUseCase
 ) : ViewModel() {
+
+    private val _uiEvent = MutableSharedFlow<HomeUiEvent>()
+    val uiEvent: SharedFlow<HomeUiEvent> = _uiEvent.asSharedFlow()
 
     private val now = Clock.System.now()
     private val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -94,6 +104,7 @@ class HomeViewModel(
                 .filter { it.dueDate >= startOfTomorrow }
                 .sortedBy { it.dueDate }
                 .take(4)
+                .distinctBy { it.id } // Safety filter for duplicate IDs
 
             val subjects = validAllTasks.map { it.subject }.distinct()
             val stats = subjects.map { s ->
@@ -133,6 +144,24 @@ class HomeViewModel(
 
     init {
         loadUnreadCount()
+        updateStreakAndReminders()
+    }
+
+    private fun updateStreakAndReminders() {
+        viewModelScope.launch {
+            try {
+                val newStreak = preferencesRepository.updateStreak()
+                if (newStreak != null) {
+                    _uiEvent.emit(HomeUiEvent.ShowStreakPopup(newStreak))
+                }
+                
+                // Auto schedule reminders for active tasks that don't have one
+                val activeTasks = getActiveTasksUseCase().first()
+                activeTasks.forEach { task ->
+                    scheduleSmartReminderUseCase(task.id)
+                }
+            } catch (e: Exception) { }
+        }
     }
 
     fun deleteTask(taskId: String) {

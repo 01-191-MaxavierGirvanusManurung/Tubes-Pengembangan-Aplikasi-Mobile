@@ -1,5 +1,6 @@
 package com.studyhub.presentation.screens.progress
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studyhub.domain.model.Priority
@@ -28,8 +29,10 @@ sealed interface ProgressUiState {
         val lowPriorityRate: Float
     ) : ProgressUiState
     object Empty : ProgressUiState
+    data class Error(val message: String) : ProgressUiState
 }
 
+@Stable
 data class SubjectProgressData(
     val subject: String,
     val completed: Int,
@@ -111,7 +114,7 @@ class ProgressViewModel(
                     lowPriorityRate = calcRate(lowTasks)
                 )
             } catch (e: Exception) {
-                _uiState.value = ProgressUiState.Empty
+                _uiState.value = ProgressUiState.Error(e.message ?: "Gagal memuat statistik")
             }
         }
     }

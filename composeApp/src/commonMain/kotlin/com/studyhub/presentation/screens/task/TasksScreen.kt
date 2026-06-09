@@ -24,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,8 @@ import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.SortBy
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.presentation.components.EmptyStateView
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.GlassIconButton
 import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.components.TaskCard
@@ -51,14 +55,32 @@ fun TasksScreen(
     val viewModel: TasksViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    val haptic = LocalHapticFeedback.current
     
+    val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = event.actionLabel,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                is UiEvent.NavigateBack -> { /* Handle if needed */ }
+            }
+        }
+    }
 
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             Column(
                 horizontalAlignment = Alignment.End,
@@ -108,13 +130,13 @@ fun TasksScreen(
                 actions = {
                     GlassIconButton(
                         icon = Icons.Default.AutoAwesome,
-                        contentDescription = "Smart Priority",
+                        contentDescription = "Smart Priority AI",
                         onClick = onNavigateToSmartPriority
                     )
                     if (state is TasksUiState.Success) {
                         GlassIconButton(
                             icon = if (state.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
-                            contentDescription = "Ganti Tampilan",
+                            contentDescription = if (state.viewMode == ViewMode.LIST) "Tampilan Grid" else "Tampilan List",
                             onClick = { viewModel.toggleViewMode() }
                         )
                     }
@@ -163,16 +185,11 @@ fun TasksScreen(
                     .padding(top = 160.dp) 
             ) {
                 when (state) {
-                    is TasksUiState.Loading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                    is TasksUiState.Error -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(state.message, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
+                    is TasksUiState.Loading -> LoadingView()
+                    is TasksUiState.Error -> ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.setFilter(null, null, null) }
+                    )
                     is TasksUiState.Success -> {
                         // Filters Section
                         Column(modifier = Modifier.padding(top = Spacing.normal)) {
@@ -189,10 +206,12 @@ fun TasksScreen(
                                         count = state.taskCounts["all"] ?: 0
                                     )
                                 }
-                                items(TaskStatus.entries, key = { it.value }) { status ->
+                                items(TaskStatus.entries, key = { it.value }, contentType = { "status_filter" }) { status ->
+                                    val currentPriority = state.filterPriority
+                                    val currentSubject = state.filterSubject
                                     FilterTab(
                                         selected = state.filterStatus == status,
-                                        onClick = { viewModel.setFilter(status, state.filterPriority, state.filterSubject) },
+                                        onClick = { viewModel.setFilter(status, currentPriority, currentSubject) },
                                         label = status.value.replace("_", " ").capitalizeFirst(),
                                         count = state.taskCounts[status.value] ?: 0
                                     )
@@ -214,7 +233,7 @@ fun TasksScreen(
                                             shape = MaterialTheme.shapes.small
                                         )
                                     }
-                                    items(state.availableSubjects, key = { it }) { subject ->
+                                    items(state.availableSubjects, key = { it }, contentType = { "subject_filter" }) { subject ->
                                         FilterChip(
                                             selected = state.filterSubject == subject,
                                             onClick = {
@@ -236,15 +255,18 @@ fun TasksScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.small),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val currentStatus = state.filterStatus
+                                val currentSubject = state.filterSubject
+                                
                                 PriorityChip(
                                     selected = state.filterPriority == null,
-                                    onClick = { viewModel.setFilter(state.filterStatus, null, state.filterSubject) },
+                                    onClick = { viewModel.setFilter(currentStatus, null, currentSubject) },
                                     label = "All Priority"
                                 )
                                 Priority.entries.forEach { priority ->
                                     PriorityChip(
                                         selected = state.filterPriority == priority,
-                                        onClick = { viewModel.setFilter(state.filterStatus, priority, state.filterSubject) },
+                                        onClick = { viewModel.setFilter(currentStatus, priority, currentSubject) },
                                         label = priority.name.capitalizeFirst()
                                     )
                                 }
@@ -334,15 +356,49 @@ fun TasksScreen(
                                         key = { it.id },
                                         contentType = { "task_list_item" }
                                     ) { task ->
-                                        TaskCard(
-                                            task = task,
-                                            onEdit = {
-                                                editingTaskId = task.id
-                                                showAddBottomSheet = true
-                                            },
-                                            onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                            onClick = { onNavigateToTaskDetail(task.id) }
+                                        val dismissState = rememberSwipeToDismissBoxState(
+                                            confirmValueChange = { value ->
+                                                if (value == SwipeToDismissBoxValue.EndToStart) {
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    viewModel.showDeleteConfirm(task.id)
+                                                    true
+                                                } else false
+                                            }
                                         )
+
+                                        SwipeToDismissBox(
+                                            state = dismissState,
+                                            backgroundContent = {
+                                                val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                                                    MaterialTheme.colorScheme.errorContainer
+                                                } else Color.Transparent
+                                                
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .clip(MaterialTheme.shapes.medium)
+                                                        .background(color)
+                                                        .padding(end = Spacing.normal),
+                                                    contentAlignment = Alignment.CenterEnd
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Delete, "Hapus",
+                                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                                    )
+                                                }
+                                            },
+                                            enableDismissFromStartToEnd = false
+                                        ) {
+                                            TaskCard(
+                                                task = task,
+                                                onEdit = {
+                                                    editingTaskId = task.id
+                                                    showAddBottomSheet = true
+                                                },
+                                                onDelete = { viewModel.showDeleteConfirm(task.id) },
+                                                onClick = { onNavigateToTaskDetail(task.id) }
+                                            )
+                                        }
                                     }
                                 }
                             } else {
@@ -358,14 +414,15 @@ fun TasksScreen(
                                         key = { it.id },
                                         contentType = { "task_grid_item" }
                                     ) { task ->
+                                        val taskId = task.id
                                         TaskGridCard(
                                             task = task,
                                             onEdit = {
-                                                editingTaskId = task.id
+                                                editingTaskId = taskId
                                                 showAddBottomSheet = true
                                             },
-                                            onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                            onClick = { onNavigateToTaskDetail(task.id) }
+                                            onDelete = { viewModel.showDeleteConfirm(taskId) },
+                                            onClick = { onNavigateToTaskDetail(taskId) }
                                         )
                                     }
                                 }

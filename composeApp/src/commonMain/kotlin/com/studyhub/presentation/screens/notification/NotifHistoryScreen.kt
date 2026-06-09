@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.NotifHistoryCard
 import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.theme.*
@@ -58,17 +60,12 @@ fun NotifHistoryScreen(navController: NavController) {
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background)) {
             when (val state = uiState) {
-                is NotifHistoryUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
+                is NotifHistoryUiState.Loading -> LoadingView()
 
-                is NotifHistoryUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                is NotifHistoryUiState.Error -> ErrorView(
+                    message = state.message,
+                    onRetry = { viewModel.loadHistory() }
+                )
 
                 is NotifHistoryUiState.Empty -> {
                     Box(
@@ -108,12 +105,16 @@ fun NotifHistoryScreen(navController: NavController) {
                     ) {
                         items(
                             items = state.items,
-                            key = { it.id }
+                            key = { it.id },
+                            contentType = { "notif_item" }
                         ) { item ->
+                            val itemId = item.id
+                            val itemTaskId = item.taskId
+                            
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->
                                     if (value == SwipeToDismissBoxValue.EndToStart) {
-                                        viewModel.deleteItem(item.id)
+                                        viewModel.deleteItem(itemId)
                                         true
                                     } else false
                                 }
@@ -145,7 +146,7 @@ fun NotifHistoryScreen(navController: NavController) {
                                     item = item,
                                     onTap = {
                                         navController.navigate(
-                                            Screen.TaskDetail.createRoute(item.taskId)
+                                            Screen.TaskDetail.createRoute(itemTaskId)
                                         )
                                     }
                                 )

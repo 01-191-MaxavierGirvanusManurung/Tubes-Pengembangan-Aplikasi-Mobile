@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +23,8 @@ import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.core.util.formatTimeOnly
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.screens.ai.SmartReminderUiState
 import com.studyhub.presentation.screens.ai.SmartReminderViewModel
 import com.studyhub.presentation.theme.*
@@ -74,163 +77,147 @@ fun TaskDetailScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            when (val state = uiState) {
-                is TaskDetailUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                is TaskDetailUiState.Error -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(Modifier.height(Spacing.normal))
-                        Button(onClick = { navController.popBackStack() }) {
-                            Text("Kembali")
-                        }
-                    }
-                }
-                is TaskDetailUiState.Success -> {
-                    val task = state.task
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(Spacing.large)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.large)
-                    ) {
-                        // Title & Status
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+        val state = uiState
+        when (state) {
+            is TaskDetailUiState.Loading -> LoadingView(Modifier.padding(paddingValues))
+            is TaskDetailUiState.Error -> ErrorView(
+                message = state.message,
+                onRetry = { viewModel.loadTask(taskId) },
+                modifier = Modifier.padding(paddingValues)
+            )
+            is TaskDetailUiState.Success -> {
+                val task = state.task
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(Spacing.large)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.large)
+                ) {
+                    // Title & Status
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = MaterialTheme.shapes.small
                             ) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = task.subject,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-
-                                Surface(
-                                    color = when(task.priority) {
-                                        Priority.HIGH -> MaterialTheme.colorScheme.errorContainer
-                                        Priority.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer
-                                        Priority.LOW -> MaterialTheme.colorScheme.tertiaryContainer
-                                    },
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = task.priority.name,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = when(task.priority) {
-                                            Priority.HIGH -> MaterialTheme.colorScheme.onErrorContainer
-                                            Priority.MEDIUM -> MaterialTheme.colorScheme.onSecondaryContainer
-                                            Priority.LOW -> MaterialTheme.colorScheme.onTertiaryContainer
-                                        }
-                                    )
-                                }
+                                Text(
+                                    text = task.displaySubject,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             }
-                            
+
+                            Surface(
+                                color = when(task.priority) {
+                                    Priority.HIGH -> MaterialTheme.colorScheme.errorContainer
+                                    Priority.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer
+                                    Priority.LOW -> MaterialTheme.colorScheme.tertiaryContainer
+                                },
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = task.priority.name,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = when(task.priority) {
+                                        Priority.HIGH -> MaterialTheme.colorScheme.onErrorContainer
+                                        Priority.MEDIUM -> MaterialTheme.colorScheme.onSecondaryContainer
+                                        Priority.LOW -> MaterialTheme.colorScheme.onTertiaryContainer
+                                    }
+                                )
+                            }
+                        }
+                        
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
-                                textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null
+                                textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
                             )
-                        }
+                    }
 
-                        // Status Badge
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.normal)) {
-                            Icon(
-                                imageVector = when(task.status) {
-                                    TaskStatus.TODO -> Icons.Default.Description
-                                    TaskStatus.IN_PROGRESS -> Icons.Default.HourglassEmpty
-                                    TaskStatus.DONE -> Icons.Default.CheckCircle
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = task.status.value.replace("_", " ").capitalizeFirst(),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                    // Status Badge
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.normal)) {
+                        Icon(
+                            imageVector = when(task.status) {
+                                TaskStatus.TODO -> Icons.Default.Description
+                                TaskStatus.IN_PROGRESS -> Icons.Default.HourglassEmpty
+                                TaskStatus.DONE -> Icons.Default.CheckCircle
+                            },
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = task.status.value.replace("_", " ").capitalizeFirst(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
-                        // AI Smart Reminder Button
-                        Button(
-                            onClick = { showSmartReminderSheet = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ),
-                            shape = MaterialTheme.shapes.medium
+                    // AI Smart Reminder Button
+                    Button(
+                        onClick = { showSmartReminderSheet = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, "Smart Reminder AI", modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(Spacing.small))
+                        Text("Smart Reminder")
+                    }
+
+                    // Info Section (Date & Time)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(Spacing.normal).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(Spacing.small))
-                            Text("Smart Reminder")
-                        }
-
-                        // Info Section (Date & Time)
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(Spacing.normal).fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                    Text("Batas Waktu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                        Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                        Text(formatDate(task.dueDate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                    }
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                Text("Batas Waktu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Text(formatDate(task.dueDate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                                 }
-                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                    Text("Jam", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                        Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                        Text(Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                    }
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                Text("Jam", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                    Text(Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
+                    }
 
-                        // Description Section
-                        Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                            Text(
-                                text = "Deskripsi",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = task.description.ifBlank { "Tidak ada deskripsi." },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (task.description.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 24.sp
-                            )
-                        }
+                    // Description Section
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                        Text(
+                            text = "Deskripsi",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = task.description.ifBlank { "Tidak ada deskripsi." },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (task.description.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 24.sp
+                        )
                     }
                 }
             }

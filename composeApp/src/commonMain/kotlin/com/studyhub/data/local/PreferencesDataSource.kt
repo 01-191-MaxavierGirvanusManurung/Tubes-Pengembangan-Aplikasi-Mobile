@@ -19,6 +19,8 @@ object PreferencesKeys {
     val POMODORO_SHORT_BREAK = intPreferencesKey("pomodoro_short_break")
     val POMODORO_LONG_BREAK = intPreferencesKey("pomodoro_long_break")
     val POMODORO_SESSIONS_BEFORE_LONG = intPreferencesKey("pomodoro_sessions_before_long")
+    val CURRENT_STREAK = intPreferencesKey("current_streak")
+    val LAST_USAGE_TIMESTAMP = longPreferencesKey("last_usage_timestamp")
 }
 
 class PreferencesDataSource(
@@ -126,6 +128,13 @@ class PreferencesDataSource(
         }
     }
 
+    suspend fun updateStreak(streak: Int, timestamp: Long) {
+        dataStore.edit { prefs ->
+            prefs[PreferencesKeys.CURRENT_STREAK] = streak
+            prefs[PreferencesKeys.LAST_USAGE_TIMESTAMP] = timestamp
+        }
+    }
+
     // ── Get all as UserPreferences snapshot ──
     val userPreferences: Flow<UserPreferences> = dataStore.data
         .catch { exception ->
@@ -141,7 +150,9 @@ class PreferencesDataSource(
                 pomodoroFocusDuration = prefs[PreferencesKeys.POMODORO_FOCUS] ?: 25,
                 pomodoroShortBreak = prefs[PreferencesKeys.POMODORO_SHORT_BREAK] ?: 5,
                 pomodoroLongBreak = prefs[PreferencesKeys.POMODORO_LONG_BREAK] ?: 15,
-                pomodoroSessionsBeforeLong = prefs[PreferencesKeys.POMODORO_SESSIONS_BEFORE_LONG] ?: 4
+                pomodoroSessionsBeforeLong = prefs[PreferencesKeys.POMODORO_SESSIONS_BEFORE_LONG] ?: 4,
+                currentStreak = prefs[PreferencesKeys.CURRENT_STREAK] ?: 0,
+                lastUsageTimestamp = prefs[PreferencesKeys.LAST_USAGE_TIMESTAMP] ?: 0
             )
         }
 }

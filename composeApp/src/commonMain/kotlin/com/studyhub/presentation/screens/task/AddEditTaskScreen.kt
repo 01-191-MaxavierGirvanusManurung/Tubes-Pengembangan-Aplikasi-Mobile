@@ -23,7 +23,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.presentation.theme.Spacing
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
+import com.studyhub.presentation.theme.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -40,8 +42,10 @@ fun AddEditTaskScreen(
     val viewModel: AddEditTaskViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var title by remember { mutableStateOf("") }
+    var titleError by remember { mutableStateOf<String?>(null) }
     var description by remember { mutableStateOf("") }
     var selectedSubject by remember { mutableStateOf("Umum") }
     var priority by remember { mutableStateOf(Priority.MEDIUM) }
@@ -60,21 +64,40 @@ fun AddEditTaskScreen(
         }
     }
 
-    LaunchedEffect(uiState.existingTask) {
-        uiState.existingTask?.let { task ->
-            title = task.title
-            description = task.description
-            selectedSubject = task.subject
-            priority = task.priority
-            status = task.status
-            dueDate = task.dueDate
-            estimatedMinutes = task.estimatedMinutes
+    LaunchedEffect(uiState) {
+        val state = uiState
+        if (state is AddEditTaskUiState.Success) {
+            state.existingTask?.let { task ->
+                title = task.title
+                description = task.description
+                selectedSubject = task.subject
+                priority = task.priority
+                status = task.status
+                dueDate = task.dueDate
+                estimatedMinutes = task.estimatedMinutes
+            }
         }
     }
 
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            navController.popBackStack()
+    LaunchedEffect(uiState) {
+        if (uiState is AddEditTaskUiState.Success) {
+            // Already handled in first LaunchedEffect or events
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is AddEditTaskEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                is AddEditTaskEvent.NavigateBack -> {
+                    navController.popBackStack()
+                }
+            }
         }
     }
 
@@ -93,190 +116,213 @@ fun AddEditTaskScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(Spacing.normal),
-            verticalArrangement = Arrangement.spacedBy(Spacing.normal)
-        ) {
-            AnimatedVisibility(visible = uiState.error != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+        val state = uiState
+        
+        when (state) {
+            is AddEditTaskUiState.Loading -> LoadingView(Modifier.padding(padding))
+            is AddEditTaskUiState.Error -> ErrorView(
+                message = state.message,
+                onRetry = { 
+                    if (taskId != null) viewModel.loadTask(taskId) 
+                    else viewModel.loadSubjects() 
+                },
+                modifier = Modifier.padding(padding)
+            )
+            else -> {
+                val subjects = if (state is AddEditTaskUiState.Success) state.subjects else emptyList()
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(Spacing.normal),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.normal)
                 ) {
-                    Text(
-                        text = uiState.error ?: "",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(Spacing.medium),
-                        style = MaterialTheme.typography.bodyMedium
+                    val isDeadlinePast = dueDate > 0 && dueDate < Clock.System.now().toEpochMilliseconds()
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { 
+                            if (it.length <= 100) title = it
+                            titleError = if (it.isBlank()) "Judul tidak boleh kosong" else null
+                        },
+                        label = { Text("Judul Tugas *") },
+                        isError = titleError != null,
+                        supportingText = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(titleError ?: "")
+                                Text(
+                                    "${title.length}/100",
+                                    color = if (title.length > 80)
+                                        MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        )
                     )
-                }
-            }
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Judul") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                )
-            )
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Deskripsi (Opsional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        )
+                    )
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Deskripsi (Opsional)") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }
-                )
-            )
+                    ExposedDropdownMenuBox(
+                        expanded = expandedSubjects,
+                        onExpandedChange = { expandedSubjects = !expandedSubjects }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedSubject,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Mata Kuliah") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSubjects) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedSubjects,
+                            onDismissRequest = { expandedSubjects = false }
+                        ) {
+                            subjects.forEach { subject ->
+                                DropdownMenuItem(
+                                    text = { Text(subject.name) },
+                                    onClick = {
+                                        selectedSubject = subject.name
+                                        expandedSubjects = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
+                        }
+                    }
 
-            ExposedDropdownMenuBox(
-                expanded = expandedSubjects,
-                onExpandedChange = { expandedSubjects = !expandedSubjects }
-            ) {
-                OutlinedTextField(
-                    value = selectedSubject,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Mata Kuliah") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSubjects) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedSubjects,
-                    onDismissRequest = { expandedSubjects = false }
-                ) {
-                    uiState.subjects.forEach { subject ->
-                        DropdownMenuItem(
-                            text = { Text(subject.name) },
-                            onClick = {
-                                selectedSubject = subject.name
-                                expandedSubjects = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    Text(
+                        "Prioritas",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                    ) {
+                        Priority.entries.forEach { p ->
+                            FilterChip(
+                                selected = priority == p,
+                                onClick = { priority = p },
+                                label = { Text(p.name) }
+                            )
+                        }
+                    }
+
+                    Text(
+                        "Status",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                    ) {
+                        TaskStatus.entries.forEach { s ->
+                            FilterChip(
+                                selected = status == s,
+                                onClick = { status = s },
+                                label = { Text(s.value.replace("_", " ").replaceFirstChar { it.uppercase() }) }
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = Instant.fromEpochMilliseconds(dueDate)
+                            .toLocalDateTime(TimeZone.currentSystemDefault())
+                            .date.toString(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tanggal Deadline") },
+                        isError = isDeadlinePast,
+                        supportingText = {
+                            if (isDeadlinePast) {
+                                Text(
+                                    "⚠ Deadline sudah lewat",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        "Estimasi Waktu: $estimatedMinutes menit",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Slider(
+                        value = estimatedMinutes.toFloat(),
+                        onValueChange = { estimatedMinutes = it.toInt() },
+                        valueRange = 0f..240f,
+                        steps = 23,
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary,
+                            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+
+                    Spacer(Modifier.height(Spacing.large))
+
+                    Button(
+                        onClick = {
+                            viewModel.saveTask(
+                                taskId = taskId,
+                                title = title,
+                                description = description,
+                                subject = selectedSubject,
+                                priority = priority,
+                                status = status,
+                                dueDate = dueDate,
+                                estimatedMinutes = estimatedMinutes
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        enabled = title.isNotBlank() && !isDeadlinePast,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text(
+                            if (taskId == null) "Tambah Tugas" else "Simpan Perubahan",
+                            style = MaterialTheme.typography.labelLarge
                         )
                     }
-                }
-            }
-
-            Text(
-                "Prioritas",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-            ) {
-                Priority.entries.forEach { p ->
-                    FilterChip(
-                        selected = priority == p,
-                        onClick = { priority = p },
-                        label = { Text(p.name) }
-                    )
-                }
-            }
-
-            Text(
-                "Status",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-            ) {
-                TaskStatus.entries.forEach { s ->
-                    FilterChip(
-                        selected = status == s,
-                        onClick = { status = s },
-                        label = { Text(s.value.replace("_", " ").replaceFirstChar { it.uppercase() }) }
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                value = Instant.fromEpochMilliseconds(dueDate)
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .date.toString(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Tanggal Deadline") },
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal")
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                "Estimasi Waktu: $estimatedMinutes menit",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Slider(
-                value = estimatedMinutes.toFloat(),
-                onValueChange = { estimatedMinutes = it.toInt() },
-                valueRange = 0f..240f,
-                steps = 23,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            )
-
-            Spacer(Modifier.height(Spacing.large))
-
-            Button(
-                onClick = {
-                    viewModel.saveTask(
-                        taskId = taskId,
-                        title = title,
-                        description = description,
-                        subject = selectedSubject,
-                        priority = priority,
-                        status = status,
-                        dueDate = dueDate,
-                        estimatedMinutes = estimatedMinutes
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = title.isNotBlank() && !uiState.isLoading,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text(
-                        if (taskId == null) "Tambah Tugas" else "Simpan Perubahan",
-                        style = MaterialTheme.typography.labelLarge
-                    )
                 }
             }
         }

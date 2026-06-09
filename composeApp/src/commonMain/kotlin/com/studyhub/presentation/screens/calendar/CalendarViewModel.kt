@@ -30,6 +30,10 @@ sealed interface CalendarUiState {
     data class Error(val message: String) : CalendarUiState
 }
 
+sealed interface CalendarUiEvent {
+    data class ShowSnackbar(val message: String) : CalendarUiEvent
+}
+
 class CalendarViewModel(
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
     private val getAllTasksUseCase: GetAllTasksUseCase,
@@ -39,7 +43,10 @@ class CalendarViewModel(
     private val _selectedDate = MutableStateFlow(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
     private val _currentMonth = MutableStateFlow(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _uiEvent = MutableSharedFlow<CalendarUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    private val _uiState = MutableStateFlow<CalendarUiState>(CalendarUiState.Loading)
     val uiState: StateFlow<CalendarUiState> = combine(
         getAllTasksUseCase(),
         _selectedDate.flatMapLatest { getTasksByDateUseCase(it) },
@@ -89,6 +96,7 @@ class CalendarViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 deleteTaskUseCase(taskId)
+                _uiEvent.emit(CalendarUiEvent.ShowSnackbar("Tugas dihapus"))
             } catch (e: Exception) {
                 // Silently fail or log for UI feedback if needed
             }

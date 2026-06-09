@@ -11,5 +11,7 @@ data class UserPreferences(
     val pomodoroFocusDuration: Int = 25,
     val pomodoroShortBreak: Int = 5,
     val pomodoroLongBreak: Int = 15,
-    val pomodoroSessionsBeforeLong: Int = 4
+    val pomodoroSessionsBeforeLong: Int = 4,
+    val currentStreak: Int = 0,
+    val lastUsageTimestamp: Long = 0
 )

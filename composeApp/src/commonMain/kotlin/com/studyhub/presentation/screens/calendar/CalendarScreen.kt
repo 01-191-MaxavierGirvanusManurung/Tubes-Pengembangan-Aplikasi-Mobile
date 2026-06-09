@@ -30,7 +30,9 @@ import com.studyhub.core.util.toLocalDate
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.presentation.components.CalendarDayCell
+import com.studyhub.presentation.components.*
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.PillBadge
 import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
@@ -45,7 +47,21 @@ fun CalendarScreen(
 ) {
     val viewModel: CalendarViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
     
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is CalendarUiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            }
+        }
+    }
+
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
     var deleteTaskConfirmId by remember { mutableStateOf<String?>(null) }
@@ -70,6 +86,7 @@ fun CalendarScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Box(
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -112,16 +129,11 @@ fun CalendarScreen(
                     .padding(top = 110.dp, bottom = 100.dp)
             ) {
                 when (state) {
-                    is CalendarUiState.Loading -> {
-                        Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                    is CalendarUiState.Error -> {
-                        Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
-                            Text(state.message, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
+                    is CalendarUiState.Loading -> LoadingView(Modifier.height(400.dp))
+                    is CalendarUiState.Error -> ErrorView(
+                        message = state.message,
+                        onRetry = { viewModel.selectDate(currentMonth) }
+                    )
                     is CalendarUiState.Success -> {
                         // Calendar Grid Card
                         Card(
@@ -286,15 +298,16 @@ fun CalendarScreen(
                             } else {
                                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                                     state.tasksOnSelectedDate.forEach { task ->
-                                        key(task.id) {
+                                        val taskId = task.id
+                                        key(taskId) {
                                             CalendarTaskCard(
                                                 task = task,
                                                 onEdit = { 
-                                                    editingTaskId = task.id
+                                                    editingTaskId = taskId
                                                     showAddBottomSheet = true 
                                                 },
-                                                onDelete = { deleteTaskConfirmId = task.id },
-                                                onClick = { onNavigateToTaskDetail(task.id) }
+                                                onDelete = { deleteTaskConfirmId = taskId },
+                                                onClick = { onNavigateToTaskDetail(taskId) }
                                             )
                                         }
                                     }

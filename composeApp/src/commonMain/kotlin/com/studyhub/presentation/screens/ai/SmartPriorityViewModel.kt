@@ -3,6 +3,7 @@ package com.studyhub.presentation.screens.ai
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studyhub.data.local.AiUsageLimit
+import com.studyhub.domain.model.AiError
 import com.studyhub.domain.model.AiUsageStats
 import com.studyhub.domain.model.PriorityResult
 import com.studyhub.domain.model.Task
@@ -23,10 +24,7 @@ sealed interface SmartPriorityUiState {
         val fromCache: Boolean,
         val usageStats: AiUsageStats
     ) : SmartPriorityUiState
-    data class Error(
-        val message: String,
-        val fallbackTasks: List<Task>
-    ) : SmartPriorityUiState
+    data class Error(val message: String) : SmartPriorityUiState
     object QuotaExceeded : SmartPriorityUiState
 }
 
@@ -64,6 +62,9 @@ class SmartPriorityViewModel(
                         }
                         task?.let { Pair(it, result) }
                     }
+                    .distinctBy { it.first.id } // Safety filter for duplicate IDs
+
+                println("SmartPriorityViewModel: paired count = ${paired.size}")
 
                 _uiState.value = SmartPriorityUiState.Success(
                     prioritizedTasks = paired,
@@ -71,10 +72,14 @@ class SmartPriorityViewModel(
                     usageStats = getAiUsageStatsUseCase()
                 )
             } catch (e: Exception) {
-                val fallback = getActiveTasksUseCase().first()
+                val message = when(e) {
+                    is AiError.NoInternet -> e.message
+                    is AiError.QuotaExceeded -> e.message
+                    is AiError.ApiError -> e.message
+                    else -> "Layanan AI sedang tidak tersedia"
+                } ?: "Terjadi kesalahan"
                 _uiState.value = SmartPriorityUiState.Error(
-                    message = e.message ?: "Terjadi kesalahan",
-                    fallbackTasks = fallback
+                    message = message
                 )
             }
         }

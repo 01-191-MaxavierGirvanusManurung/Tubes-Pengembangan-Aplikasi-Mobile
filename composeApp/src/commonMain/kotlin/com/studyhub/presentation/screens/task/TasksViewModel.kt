@@ -34,9 +34,16 @@ sealed interface TasksUiState {
     data class Error(val message: String) : TasksUiState
 }
 
+sealed interface UiEvent {
+    data class ShowSnackbar(
+        val message: String,
+        val actionLabel: String? = null
+    ) : UiEvent
+    object NavigateBack : UiEvent
+}
+
 class TasksViewModel(
     private val getAllTasksUseCase: GetAllTasksUseCase,
-    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
     private val filterSortUseCase: FilterAndSortTasksUseCase
 ) : ViewModel() {
@@ -49,6 +56,9 @@ class TasksViewModel(
     private val _showCompleted = MutableStateFlow(false)
     private val _viewMode = MutableStateFlow(ViewMode.LIST)
     private val _deleteConfirmTaskId = MutableStateFlow<String?>(null)
+
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent: SharedFlow<UiEvent> = _uiEvent.asSharedFlow()
 
     val uiState: StateFlow<TasksUiState> = combine(
         getAllTasksUseCase(),
@@ -74,7 +84,7 @@ class TasksViewModel(
 
             val filtered = filterSortUseCase(
                 allTasks, status, priority, subject, sortBy, query, showCompleted
-            )
+            ).distinctBy { it.id } // Safety filter for duplicate IDs
             
             val counts = mapOf(
                 "all" to allTasks.size,
@@ -108,18 +118,11 @@ class TasksViewModel(
         initialValue = TasksUiState.Loading
     )
 
-    fun updateStatus(taskId: String, status: TaskStatus) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                updateTaskStatusUseCase(taskId, status)
-            } catch (e: Exception) { }
-        }
-    }
-
     fun deleteTask(taskId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 deleteTaskUseCase(taskId)
+                _uiEvent.emit(UiEvent.ShowSnackbar("Tugas dihapus"))
             } catch (e: Exception) { }
         }
     }

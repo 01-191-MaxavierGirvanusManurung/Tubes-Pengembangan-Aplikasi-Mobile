@@ -31,6 +31,7 @@ import com.studyhub.presentation.screens.ai.SmartReminderViewModel
 import com.studyhub.presentation.screens.notification.NotifHistoryViewModel
 import com.studyhub.presentation.screens.pomodoro.PomodoroViewModel
 import com.studyhub.presentation.screens.progress.ProgressViewModel
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
@@ -111,9 +112,13 @@ val useCaseModule = module {
 // ==================== VIEWMODEL MODULE ====================
 
 val viewModelModule = module {
-    viewModelOf(::HomeViewModel)
-    viewModelOf(::TasksViewModel)
+    viewModel {
+        HomeViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get()
+        )
+    }
     viewModelOf(::AddEditTaskViewModel)
+    viewModelOf(::TasksViewModel)
     viewModelOf(::TaskDetailViewModel)
     viewModelOf(::CalendarViewModel)
     viewModelOf(::ProfileViewModel)

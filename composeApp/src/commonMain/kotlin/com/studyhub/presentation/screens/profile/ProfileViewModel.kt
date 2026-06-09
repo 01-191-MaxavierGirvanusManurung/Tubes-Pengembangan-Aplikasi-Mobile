@@ -30,7 +30,8 @@ sealed interface ProfileUiState {
         val completionRate: Int,
         val totalStudyHours: Int,
         val subjectBreakdown: List<SubjectStat>,
-        val achievements: List<Achievement>
+        val achievements: List<Achievement>,
+        val dayStreak: Int
     ) : ProfileUiState
     data class Error(val message: String) : ProfileUiState
 }
@@ -100,7 +101,8 @@ class ProfileViewModel(
                 completionRate = completionRate,
                 totalStudyHours = totalHours,
                 subjectBreakdown = subjectBreakdown,
-                achievements = achievements
+                achievements = achievements,
+                dayStreak = prefs.currentStreak
             )
         } catch (e: Exception) {
             ProfileUiState.Error(e.message ?: "Terjadi kesalahan")

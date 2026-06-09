@@ -18,6 +18,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.data.local.AiUsageLimit
 import com.studyhub.presentation.components.*
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
@@ -59,23 +61,7 @@ fun SmartPriorityScreen(navController: NavController) {
 
                 is SmartPriorityUiState.Idle -> {}
 
-                is SmartPriorityUiState.Loading -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(Modifier.height(Spacing.normal))
-                        Text(
-                            "AI sedang menganalisis tugas...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                is SmartPriorityUiState.Loading -> LoadingView()
 
                 is SmartPriorityUiState.QuotaExceeded -> {
                     Column(
@@ -153,15 +139,17 @@ fun SmartPriorityScreen(navController: NavController) {
                     ) {
                         itemsIndexed(
                             items = state.prioritizedTasks,
-                            key = { _, pair -> pair.first.id }
+                            key = { _, pair -> pair.first.id },
+                            contentType = { _, _ -> "prioritized_task" }
                         ) { index, (task, result) ->
+                            val taskId = task.id
                             StaggeredItem(index = index) {
                                 PriorityTaskCard(
                                     task = task,
                                     result = result,
                                     onTap = {
                                         navController.navigate(
-                                            Screen.TaskDetail.createRoute(task.id)
+                                            Screen.TaskDetail.createRoute(taskId)
                                         )
                                     }
                                 )
@@ -170,52 +158,10 @@ fun SmartPriorityScreen(navController: NavController) {
                     }
                 }
 
-                is SmartPriorityUiState.Error -> {
-                    Column(
-                        modifier = Modifier.padding(Spacing.normal)
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            ),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Text(
-                                "AI tidak tersedia: ${state.message}\nMenampilkan urutan lokal.",
-                                modifier = Modifier.padding(Spacing.medium),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                        Spacer(Modifier.height(Spacing.normal))
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(Spacing.small),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            itemsIndexed(
-                                items = state.fallbackTasks,
-                                key = { _, task -> task.id }
-                            ) { index, task ->
-                                StaggeredItem(index = index) {
-                                    TaskCard(
-                                        task = task,
-                                        onEdit = {
-                                            // Optional: Handle edit from here or navigate to detail
-                                        },
-                                        onDelete = {
-                                            // Optional: Handle delete
-                                        },
-                                        onClick = {
-                                            navController.navigate(
-                                                Screen.TaskDetail.createRoute(task.id)
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                is SmartPriorityUiState.Error -> ErrorView(
+                    message = state.message,
+                    onRetry = { viewModel.refresh() }
+                )
             }
         }
     }

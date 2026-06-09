@@ -25,6 +25,7 @@ import com.studyhub.presentation.screens.progress.ProgressScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -139,7 +140,7 @@ fun MainScreen(rootNavController: NavController) {
                 onItemSelected = { screen ->
                     if (currentRoute != screen.route) {
                         navController.navigate(screen.route) {
-                            popUpTo(navController.graph.startDestinationRoute!!) {
+                            popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
                             launchSingleTop = true
@@ -165,7 +166,7 @@ fun MainScreen(rootNavController: NavController) {
                 HomeScreen(
                     onNavigateToTasks = { 
                         navController.navigate(Screen.Tasks.route) {
-                            popUpTo(navController.graph.startDestinationRoute!!) {
+                            popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
                             launchSingleTop = true

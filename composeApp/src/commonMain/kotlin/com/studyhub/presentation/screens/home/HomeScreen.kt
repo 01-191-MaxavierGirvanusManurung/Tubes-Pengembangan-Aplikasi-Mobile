@@ -28,13 +28,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.studyhub.domain.model.TaskStatus
 import com.studyhub.presentation.components.LiquidGlassCard
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.screens.home.components.FocusTimerBottomSheet
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
+import com.studyhub.presentation.util.GreetingUtils
 import com.studyhub.presentation.theme.*
+import com.studyhub.presentation.screens.home.HomeUiEvent
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -51,6 +56,37 @@ fun HomeScreen(
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var showStreakDialog by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is HomeUiEvent.ShowStreakPopup -> {
+                    showStreakDialog = event.streak
+                }
+            }
+        }
+    }
+
+    val overdueCount by remember(uiState) {
+        derivedStateOf {
+            if (uiState is HomeUiState.Success) {
+                val now = Clock.System.now().toEpochMilliseconds()
+                (uiState as HomeUiState.Success).upcomingTasks.count { 
+                    it.dueDate < now && it.status != TaskStatus.DONE 
+                }
+            } else 0
+        }
+    }
+
+    val subjectList by remember(uiState) {
+        derivedStateOf {
+            if (uiState is HomeUiState.Success) {
+                (uiState as HomeUiState.Success).subjectStats.map { it.name }
+            } else emptyList()
+        }
+    }
 
     val scrollState = rememberLazyListState()
 
@@ -69,22 +105,11 @@ fun HomeScreen(
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         when (val state = uiState) {
-            is HomeUiState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-            is HomeUiState.Error -> {
-                Box(Modifier.fillMaxSize().padding(Spacing.large), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(state.message, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
-                        Spacer(Modifier.height(Spacing.normal))
-                        Button(onClick = { viewModel.loadUnreadCount() }) {
-                            Text("Coba Lagi")
-                        }
-                    }
-                }
-            }
+            is HomeUiState.Loading -> LoadingView()
+            is HomeUiState.Error -> ErrorView(
+                message = state.message,
+                onRetry = { viewModel.loadUnreadCount() }
+            )
             is HomeUiState.Success -> {
                 LazyColumn(
                     state = scrollState,
@@ -95,7 +120,7 @@ fun HomeScreen(
                     // Header Section
                     item {
                         StudyHubHeader(
-                            title = "Good morning, ${state.userName}! 👋",
+                            title = "${GreetingUtils.getGreeting()}, ${state.userName}! ${GreetingUtils.getGreetingEmoji()}",
                             dateText = todayDateText,
                             subtitle = {
                                 Row {
@@ -136,58 +161,60 @@ fun HomeScreen(
                                 }
                             },
                             content = {
-                                LiquidGlassCard(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    borderAlpha = 0.3f
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
+                                Box {
+                                    LiquidGlassCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        borderAlpha = 0.3f
                                     ) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
-                                            Canvas(modifier = Modifier.fillMaxSize()) {
-                                                drawArc(
-                                                    color = Color.White.copy(alpha = 0.15f),
-                                                    startAngle = 0f,
-                                                    sweepAngle = 360f,
-                                                    useCenter = false,
-                                                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                                                )
-                                                drawArc(
-                                                    color = HighlightGold,
-                                                    startAngle = -90f,
-                                                    sweepAngle = (state.completionPercentage / 100f) * 360f,
-                                                    useCenter = false,
-                                                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
+                                                Canvas(modifier = Modifier.fillMaxSize()) {
+                                                    drawArc(
+                                                        color = Color.White.copy(alpha = 0.15f),
+                                                        startAngle = 0f,
+                                                        sweepAngle = 360f,
+                                                        useCenter = false,
+                                                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                                    )
+                                                    drawArc(
+                                                        color = HighlightGold,
+                                                        startAngle = -90f,
+                                                        sweepAngle = (state.completionPercentage / 100f) * 360f,
+                                                        useCenter = false,
+                                                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                                    )
+                                                }
+                                                Text(
+                                                    "${state.completionPercentage}%",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
                                                 )
                                             }
-                                            Text(
-                                                "${state.completionPercentage}%",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
-                                        
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                "Overall Progress",
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                            Spacer(Modifier.height(Spacing.extraSmall))
-                                            LinearProgressIndicator(
-                                                progress = { state.completionPercentage / 100f },
-                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                                color = HighlightGold,
-                                                trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-                                            )
-                                            Text(
-                                                "${state.doneTasks} of ${state.totalTasks} tasks completed",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                                            )
+                                            
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    "Overall Progress",
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                                Spacer(Modifier.height(Spacing.extraSmall))
+                                                LinearProgressIndicator(
+                                                    progress = { state.completionPercentage / 100f },
+                                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                                                    color = HighlightGold,
+                                                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                                                )
+                                                Text(
+                                                    "${state.doneTasks} of ${state.totalTasks} tasks completed",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -246,16 +273,21 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        items(items = state.upcomingTasks, key = { it.id }) { task ->
+                        items(
+                            items = state.upcomingTasks,
+                            key = { it.id },
+                            contentType = { "upcoming_task" }
+                        ) { task ->
+                            val taskId = task.id
                             Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
                                 TaskCard(
                                     task = task,
                                     onEdit = { 
-                                        editingTaskId = task.id
+                                        editingTaskId = taskId
                                         showAddBottomSheet = true 
                                     },
-                                    onDelete = { deleteConfirmTaskId = task.id },
-                                    onClick = { onNavigateToTaskDetail(task.id) }
+                                    onDelete = { deleteConfirmTaskId = taskId },
+                                    onClick = { onNavigateToTaskDetail(taskId) }
                                 )
                             }
                         }
@@ -505,6 +537,62 @@ fun HomeScreen(
             }
         )
     }
+
+    if (showStreakDialog != null) {
+        StreakPopup(
+            streakCount = showStreakDialog!!,
+            onDismiss = { showStreakDialog = null }
+        )
+    }
+}
+
+@Composable
+fun StreakPopup(streakCount: Int, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Mantap!")
+            }
+        },
+        title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("🔥", fontSize = 40.sp)
+                    }
+                }
+                Spacer(Modifier.height(Spacing.normal))
+                Text(
+                    "Study Streak!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        text = {
+            Text(
+                "Kamu sudah belajar selama $streakCount hari berturut-turut. Terus semangat!",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surface
+    )
 }
 
 @Composable

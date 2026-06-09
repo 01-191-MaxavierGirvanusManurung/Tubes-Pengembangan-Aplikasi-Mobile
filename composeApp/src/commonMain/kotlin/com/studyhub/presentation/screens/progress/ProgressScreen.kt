@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.presentation.components.*
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.navigation.Screen
 import com.studyhub.presentation.theme.Spacing
 import org.koin.compose.viewmodel.koinViewModel
@@ -38,11 +40,12 @@ fun ProgressScreen(navController: NavController) {
         }
     ) { padding ->
         when (val state = uiState) {
-            is ProgressUiState.Loading -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
+            is ProgressUiState.Loading -> LoadingView(Modifier.padding(padding))
+            is ProgressUiState.Error -> ErrorView(
+                message = state.message,
+                onRetry = { viewModel.loadStats() },
+                modifier = Modifier.padding(padding)
+            )
             is ProgressUiState.Success -> {
                 LazyColumn(
                     modifier = Modifier.padding(padding),
@@ -76,7 +79,8 @@ fun ProgressScreen(navController: NavController) {
                     }
                     items(
                         items = state.subjectProgress,
-                        key = { it.subject }
+                        key = { it.subject },
+                        contentType = { "subject_progress" }
                     ) { progress ->
                         SubjectProgressItem(progress = progress)
                     }

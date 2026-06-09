@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.core.util.SystemAppearance
+import com.studyhub.presentation.components.LoadingView
+import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.StudyHubHeader
 import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
@@ -34,16 +36,11 @@ fun ProfileScreen(navController: NavController) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        is ProfileUiState.Loading -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        is ProfileUiState.Error -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(state.message, color = MaterialTheme.colorScheme.error)
-            }
-        }
+        is ProfileUiState.Loading -> LoadingView()
+        is ProfileUiState.Error -> ErrorView(
+            message = state.message,
+            onRetry = { /* Combine flows will trigger on state change */ }
+        )
         is ProfileUiState.Success -> {
             SystemAppearance(isDarkMode = state.isDarkMode)
 
@@ -132,7 +129,7 @@ fun ProfileScreen(navController: NavController) {
                                 
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
                                     BadgeChip(
-                                        text = "7-Day Streak",
+                                        text = "${state.dayStreak}-Day Streak",
                                         icon = "🔥",
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer

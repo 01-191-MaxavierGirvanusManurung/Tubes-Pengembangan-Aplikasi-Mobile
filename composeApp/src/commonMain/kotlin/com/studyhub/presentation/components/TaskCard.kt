@@ -1,5 +1,6 @@
 package com.studyhub.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -132,7 +133,7 @@ fun TaskCard(
                         val subjectText = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer
                                           else MaterialTheme.colorScheme.onSurfaceVariant
 
-                        TaskTag(task.subject, subjectBg, subjectText)
+                        TaskTag(task.displaySubject, subjectBg, subjectText)
                         
                         val (priorityBg, priorityText) = when {
                             task.priority == Priority.HIGH -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
@@ -160,6 +161,21 @@ fun TaskCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    AnimatedVisibility(visible = isOverdue) {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.errorContainer
+                        ) {
+                            Text(
+                                "Terlambat",
+                                modifier = Modifier.padding(horizontal = Spacing.small, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
                 
                 Row {
@@ -219,6 +235,7 @@ fun TaskGridCard(
         task.status == TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
         else -> Icons.Default.Schedule
     }
+    
     val statusColor = when {
         isDone -> MaterialTheme.colorScheme.primary
         isOverdue -> MaterialTheme.colorScheme.error
