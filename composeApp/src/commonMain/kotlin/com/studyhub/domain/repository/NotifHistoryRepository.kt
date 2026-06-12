@@ -1,10 +1,12 @@
 package com.studyhub.domain.repository
 
 import com.studyhub.domain.model.NotifHistoryItem
+import kotlinx.coroutines.flow.Flow
 
 interface NotifHistoryRepository {
     suspend fun getHistory(): List<NotifHistoryItem>
     suspend fun getUnreadCount(): Int
+    fun observeUnreadCount(): Flow<Int>
     suspend fun addToHistory(
         taskId: String,
         taskTitle: String,

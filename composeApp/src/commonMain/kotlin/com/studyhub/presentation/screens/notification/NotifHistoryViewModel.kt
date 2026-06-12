@@ -26,7 +26,8 @@ class NotifHistoryViewModel(
     private val getNotifHistoryUseCase: GetNotifHistoryUseCase,
     private val getUnreadCountUseCase: GetUnreadCountUseCase,
     private val markNotifReadUseCase: MarkNotifReadUseCase,
-    private val deleteNotifHistoryUseCase: DeleteNotifHistoryUseCase
+    private val deleteNotifHistoryUseCase: DeleteNotifHistoryUseCase,
+    private val notifHistoryRepository: com.studyhub.domain.repository.NotifHistoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NotifHistoryUiState>(NotifHistoryUiState.Loading)
@@ -34,7 +35,6 @@ class NotifHistoryViewModel(
 
     fun loadHistory() {
         viewModelScope.launch {
-            _uiState.value = NotifHistoryUiState.Loading
             try {
                 val items = getNotifHistoryUseCase()
                 val count = getUnreadCountUseCase()

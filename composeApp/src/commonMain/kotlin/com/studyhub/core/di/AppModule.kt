@@ -103,6 +103,7 @@ val useCaseModule = module {
     factory { CancelReminderUseCase(get()) }
     factory { GetNotifHistoryUseCase(get()) }
     factory { GetUnreadCountUseCase(get()) }
+    factory { ObserveUnreadCountUseCase(get()) }
     factory { MarkNotifReadUseCase(get()) }
     factory { DeleteNotifHistoryUseCase(get()) }
 }

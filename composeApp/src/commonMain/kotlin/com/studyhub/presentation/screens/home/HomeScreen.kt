@@ -174,7 +174,7 @@ fun HomeScreen(
             is HomeUiState.Loading -> LoadingView()
             is HomeUiState.Error -> ErrorView(
                 message = state.message,
-                onRetry = { viewModel.loadUnreadCount() }
+                onRetry = { /* Reactive: will retry on state change or manual refresh if needed */ }
             )
             is HomeUiState.Success -> {
                 LazyColumn(

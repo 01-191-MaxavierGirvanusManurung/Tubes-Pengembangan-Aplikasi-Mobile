@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.studyhub.core.util.atEndOfDayMillis
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.domain.usecase.notification.GetUnreadCountUseCase
+import com.studyhub.domain.usecase.notification.ObserveUnreadCountUseCase
 import com.studyhub.domain.usecase.preferences.GetUserPreferencesUseCase
 import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetActiveTasksUseCase
@@ -57,7 +57,7 @@ class HomeViewModel(
     private val getTasksByDateUseCase: GetTasksByDateUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
     private val getUserPreferencesUseCase: GetUserPreferencesUseCase,
-    private val getUnreadCountUseCase: GetUnreadCountUseCase,
+    private val observeUnreadCountUseCase: ObserveUnreadCountUseCase,
     private val preferencesRepository: PreferencesRepository,
     private val scheduleSmartReminderUseCase: com.studyhub.domain.usecase.notification.ScheduleSmartReminderUseCase
 ) : ViewModel() {
@@ -69,25 +69,12 @@ class HomeViewModel(
     private val localNow = now.toLocalDateTime(TimeZone.currentSystemDefault())
     private val today = localNow.date
 
-    private val _unreadCount = MutableStateFlow(0)
-
-    fun loadUnreadCount() {
-        viewModelScope.launch {
-            try {
-                val count = getUnreadCountUseCase()
-                _unreadCount.value = count
-            } catch (e: Exception) {
-                // Silently fail or log for polish
-            }
-        }
-    }
-
     val uiState: StateFlow<HomeUiState> = combine(
         getUserPreferencesUseCase(),
         getAllTasksUseCase(),
         getActiveTasksUseCase(),
         getTasksByDateUseCase(today),
-        _unreadCount
+        observeUnreadCountUseCase()
     ) { prefs, allTasks, allActive, todayTasks, unread ->
         try {
             val startOfTomorrow = today.atEndOfDayMillis() + 1
@@ -143,7 +130,6 @@ class HomeViewModel(
     )
 
     init {
-        loadUnreadCount()
         updateStreakAndReminders()
     }
 

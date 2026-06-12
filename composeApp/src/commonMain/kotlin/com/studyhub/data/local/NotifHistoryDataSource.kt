@@ -4,10 +4,17 @@ import com.studyhub.database.StudyHubDatabase
 import com.studyhub.domain.model.NotifHistoryItem
 import com.studyhub.core.util.currentTimeMillis
 import com.studyhub.core.util.uuid
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToOne
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 interface NotifHistoryDataSource {
     fun getAll(): List<NotifHistoryItem>
     fun getUnreadCount(): Int
+    fun observeUnreadCount(): Flow<Int>
     fun insert(taskId: String, taskTitle: String, taskSubject: String, aiReason: String)
     fun markAllRead()
     fun markRead(id: String)
@@ -37,6 +44,12 @@ class SqlDelightNotifHistoryDataSource(
         database.notifHistoryEntityQueries.selectUnreadCount()
             .executeAsOne().toInt()
     } catch (e: Exception) { 0 }
+
+    override fun observeUnreadCount(): Flow<Int> =
+        database.notifHistoryEntityQueries.selectUnreadCount()
+            .asFlow()
+            .mapToOne(Dispatchers.IO)
+            .map { it.toInt() }
 
     override fun insert(
         taskId: String, taskTitle: String,

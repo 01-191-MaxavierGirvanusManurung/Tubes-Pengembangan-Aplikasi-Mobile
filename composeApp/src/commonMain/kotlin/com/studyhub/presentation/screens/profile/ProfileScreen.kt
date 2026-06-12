@@ -28,6 +28,9 @@ import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.ScreenHeader
 import com.studyhub.presentation.theme.*
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.painterResource
+import studyhub.composeapp.generated.resources.*
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -317,14 +320,32 @@ fun ProfileScreen(navController: NavController) {
                 }
 
                 item {
-                    Spacer(Modifier.height(Spacing.normal))
-                    Text(
-                        "Study Hub v1.0.0",
+                    Spacer(Modifier.height(Spacing.large))
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = painterResource(Res.drawable.logo_studyhub),
+                            contentDescription = "StudyHub Logo",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                        
+                        Spacer(Modifier.height(Spacing.small))
+                        Text(
+                            "Study Hub v1.0.0",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "Catat. Fokus. Raih Tujuan.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                    Spacer(Modifier.height(Spacing.large))
                 }
             }
         }

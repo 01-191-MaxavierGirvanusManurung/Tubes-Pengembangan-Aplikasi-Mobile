@@ -13,6 +13,7 @@ class NotifHistoryRepositoryImpl(
 ) : NotifHistoryRepository {
     override suspend fun getHistory() = dataSource.getAll()
     override suspend fun getUnreadCount() = dataSource.getUnreadCount()
+    override fun observeUnreadCount() = dataSource.observeUnreadCount()
     
     override suspend fun addToHistory(
         taskId: String, taskTitle: String,
