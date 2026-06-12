@@ -10,9 +10,8 @@ interface PomodoroRepository {
         phase: PomodoroPhase,
         wasCompleted: Boolean
     )
-    suspend fun getTodayFocusCount(): Int
-    suspend fun getTodayFocusMinutes(): Int
-    suspend fun getTodaySessions(): List<PomodoroSessionSummary>
+    suspend fun getFocusMinutesInRange(start: Long, end: Long): Int
+    suspend fun getSessionsInRange(start: Long, end: Long): List<PomodoroSessionSummary>
 }
 
 data class PomodoroSessionSummary(

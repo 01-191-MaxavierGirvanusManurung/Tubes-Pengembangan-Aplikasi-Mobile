@@ -9,8 +9,9 @@ import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.repository.PomodoroRepository
 import com.studyhub.domain.repository.PreferencesRepository
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
+import kotlinx.datetime.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
+import com.studyhub.core.util.atStartOfDayMillis
 
 sealed interface ProgressUiState {
     object Loading : ProgressUiState
@@ -92,7 +93,9 @@ class ProgressViewModel(
             }
 
             val focusMin = try {
-                pomodoroRepository.getTodayFocusMinutes()
+                val today = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+                val startOfToday = today.atStartOfDayMillis()
+                pomodoroRepository.getFocusMinutesInRange(startOfToday, startOfToday + 86_400_000L)
             } catch (e: Exception) { 0 }
 
             ProgressUiState.Success(

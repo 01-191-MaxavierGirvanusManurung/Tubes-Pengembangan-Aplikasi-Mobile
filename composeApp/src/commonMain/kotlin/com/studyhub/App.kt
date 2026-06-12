@@ -21,7 +21,7 @@ fun App() {
         val isDarkMode by themeViewModel.isDarkMode.collectAsStateWithLifecycle()
         
         val syncManager: SyncManager = koinInject()
-        
+
         androidx.compose.runtime.LaunchedEffect(Unit) {
             syncManager.startAutoSync()
         }

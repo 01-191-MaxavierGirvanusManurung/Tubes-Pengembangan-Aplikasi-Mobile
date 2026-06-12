@@ -118,7 +118,8 @@ fun HomeScreen(
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToSmartPriority: () -> Unit,
     onNavigateToNotifHistory: () -> Unit,
-    onNavigateToProgress: () -> Unit
+    onNavigateToProgress: () -> Unit,
+    onNavigateToReport: () -> Unit
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -363,7 +364,7 @@ fun HomeScreen(
                     item {
                         Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().clickable { onNavigateToReport() },
                                 shape = MaterialTheme.shapes.large,
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)

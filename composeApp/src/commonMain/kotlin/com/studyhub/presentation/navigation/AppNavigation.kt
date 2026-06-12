@@ -22,6 +22,7 @@ import com.studyhub.presentation.screens.ai.SmartPriorityScreen
 import com.studyhub.presentation.screens.notification.NotifHistoryScreen
 import com.studyhub.presentation.screens.pomodoro.PomodoroScreen
 import com.studyhub.presentation.screens.progress.ProgressScreen
+import com.studyhub.presentation.screens.report.ReportScreen
 import com.studyhub.presentation.screens.task.AddEditTaskScreen
 import com.studyhub.presentation.screens.task.TaskDetailScreen
 import com.studyhub.presentation.screens.task.TasksScreen
@@ -122,6 +123,10 @@ fun AppNavigation() {
             composable(Screen.Progress.route) {
                 ProgressScreen(navController)
             }
+
+            composable(Screen.Report.route) {
+                ReportScreen(navController)
+            }
         }
     }
 }
@@ -176,7 +181,8 @@ fun MainScreen(rootNavController: NavController) {
                     onNavigateToTaskDetail = { taskId -> rootNavController.navigate(Screen.TaskDetail.createRoute(taskId)) },
                     onNavigateToSmartPriority = { rootNavController.navigate(Screen.SmartPriority.route) },
                     onNavigateToNotifHistory = { rootNavController.navigate(Screen.NotifHistory.route) },
-                    onNavigateToProgress = { rootNavController.navigate(Screen.Progress.route) }
+                    onNavigateToProgress = { rootNavController.navigate(Screen.Progress.route) },
+                    onNavigateToReport = { rootNavController.navigate(Screen.Report.route) }
                 ) 
             }
             composable(Screen.Tasks.route) { 
