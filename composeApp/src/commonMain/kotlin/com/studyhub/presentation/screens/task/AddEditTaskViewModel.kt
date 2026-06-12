@@ -108,17 +108,24 @@ class AddEditTaskViewModel(
     ) {
         viewModelScope.launch {
             val currentState = _uiState.value
-            val existingCreatedAt = if (currentState is AddEditTaskUiState.Success) {
-                currentState.existingTask?.createdAt
+            val existingTask = if (currentState is AddEditTaskUiState.Success) {
+                currentState.existingTask
             } else null
             
-            val existingColorHex = if (currentState is AddEditTaskUiState.Success) {
-                currentState.existingTask?.colorHex
-            } else null
+            val existingCreatedAt = existingTask?.createdAt
+            val existingColorHex = existingTask?.colorHex
+            val existingCompletedAt = existingTask?.completedAt
 
             _uiState.update { AddEditTaskUiState.Loading }
             try {
                 val now = Clock.System.now().toEpochMilliseconds()
+                
+                // Jika status DONE, gunakan completedAt yang lama jika ada, jika tidak ada gunakan now.
+                // Jika status bukan DONE, completedAt adalah null.
+                val completedAt = if (status == TaskStatus.DONE) {
+                    existingCompletedAt ?: now
+                } else null
+
                 val task = Task(
                     id = taskId ?: "task_${now}",
                     title = title,
@@ -131,7 +138,7 @@ class AddEditTaskViewModel(
                     tags = emptyList(),
                     estimatedMinutes = estimatedMinutes,
                     isDeleted = false,
-                    completedAt = if (status == TaskStatus.DONE) now else null,
+                    completedAt = completedAt,
                     createdAt = existingCreatedAt ?: now,
                     updatedAt = now,
                     colorHex = existingColorHex ?: TaskColor.random()

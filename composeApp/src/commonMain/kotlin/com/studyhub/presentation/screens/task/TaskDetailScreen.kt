@@ -23,6 +23,7 @@ import com.studyhub.core.util.capitalizeFirst
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.core.util.formatTimeOnly
+import com.studyhub.core.util.formatToDisplay
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.screens.ai.SmartReminderUiState
@@ -95,7 +96,7 @@ fun TaskDetailScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(Spacing.large)
                 ) {
-                    // Title & Status
+                    // Title & Status Section
                     Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -135,14 +136,14 @@ fun TaskDetailScreen(
                             }
                         }
                         
-                            Text(
-                                text = task.title,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
                     // Status Badge
@@ -184,26 +185,49 @@ fun TaskDetailScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                         shape = MaterialTheme.shapes.large
                     ) {
-                        Row(
-                            modifier = Modifier.padding(Spacing.normal).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                Text("Batas Waktu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                    Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text(formatDate(task.dueDate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Column(modifier = Modifier.padding(Spacing.normal).fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Text("Batas Waktu", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                        Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Text(formatDate(task.dueDate), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Text("Jam Deadline", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                        Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Text(
+                                            task.dueTime ?: Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                Text("Jam", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                                    Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text(
-                                        task.dueTime ?: Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
+
+                            // Tampilkan Waktu Pengumpulan jika status DONE
+                            if (task.status == TaskStatus.DONE) {
+                                Spacer(modifier = Modifier.height(Spacing.normal))
+                                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+                                Spacer(modifier = Modifier.height(Spacing.normal))
+                                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                    Text("Waktu Pengumpulan", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                                        Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                        
+                                        // Gunakan completedAt jika ada, jika tidak gunakan updatedAt sebagai fallback
+                                        val displayTime = task.completedAt ?: task.updatedAt
+                                        Text(
+                                            Instant.fromEpochMilliseconds(displayTime).formatToDisplay(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
