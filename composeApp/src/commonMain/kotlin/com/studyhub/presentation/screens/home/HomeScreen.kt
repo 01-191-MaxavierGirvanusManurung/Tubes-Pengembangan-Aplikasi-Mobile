@@ -139,8 +139,8 @@ fun HomeScreen(
         derivedStateOf {
             if (uiState is HomeUiState.Success) {
                 val now = Clock.System.now().toEpochMilliseconds()
-                (uiState as HomeUiState.Success).upcomingTasks.count { 
-                    it.dueDate < now && it.status != TaskStatus.DONE 
+                (uiState as HomeUiState.Success).upcomingTasks.count {
+                    it.dueDate < now && it.status != TaskStatus.DONE
                 }
             } else 0
         }
@@ -181,7 +181,7 @@ fun HomeScreen(
                     state = scrollState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 100.dp),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.large)
+                    verticalArrangement = Arrangement.spacedBy(Spacing.small)
                 ) {
                     // Header Section
                     item {
@@ -354,7 +354,7 @@ fun HomeScreen(
                     // Progress Shortcut Card (Secondary)
                     item {
                         ProgressShortcutCard(
-                            onClick = onNavigateToProgress,
+                            onClick = { onNavigateToProgress() },
                             modifier = Modifier.padding(horizontal = Spacing.normal)
                         )
                     }
@@ -365,7 +365,13 @@ fun HomeScreen(
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.large,
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant
+                                )
                             ) {
                                 Row(
                                     modifier = Modifier.padding(Spacing.normal),
@@ -521,8 +527,8 @@ fun StatBox(modifier: Modifier, label: String, value: String, icon: ImageVector,
             }
             Spacer(Modifier.height(Spacing.extraSmall))
             Text(
-                value, 
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), 
+                value,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp),
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -689,9 +695,13 @@ fun SmartPriorityShortcut(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
         ),
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Row(
             modifier = Modifier.padding(Spacing.normal),
@@ -700,18 +710,27 @@ fun SmartPriorityShortcut(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
             ) {
-                Icon(
-                    Icons.Default.AutoAwesome, "AI Priority",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.AutoAwesome, "AI Priority",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "Smart Priority",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "AI akan urutkan tugasmu",
@@ -737,9 +756,13 @@ fun ProgressShortcutCard(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
         ),
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Row(
             modifier = Modifier.padding(Spacing.normal),
@@ -748,18 +771,27 @@ fun ProgressShortcutCard(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+                horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
             ) {
-                Icon(
-                    Icons.Default.Insights, "Statistik",
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
+                Surface(
+                    modifier = Modifier.size(40.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Insights, "Statistik",
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "Progress",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "Lihat statistik belajarmu",

@@ -343,7 +343,7 @@ fun AddEditTaskBottomSheet(
                             shape = MaterialTheme.shapes.medium,
                             color = if (isSelected) pColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
                             border = androidx.compose.foundation.BorderStroke(
-                                1.dp, 
+                                1.dp,
                                 if (isSelected) pColor else MaterialTheme.colorScheme.outlineVariant
                             )
                         ) {

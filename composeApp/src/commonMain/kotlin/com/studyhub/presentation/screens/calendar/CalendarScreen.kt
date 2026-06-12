@@ -91,14 +91,10 @@ fun CalendarScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
-        ) {
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
             val state = uiState
-
-            // Header Section
+            // Fixed Header Section
             ScreenHeader {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -137,12 +133,21 @@ fun CalendarScreen(
                     }
                 }
             }
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = padding.calculateTopPadding())
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            val state = uiState
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(top = 130.dp, bottom = 100.dp)
+                    .padding(bottom = 100.dp)
             ) {
                 when (state) {
                     is CalendarUiState.Loading -> LoadingView(Modifier.height(400.dp))
@@ -155,7 +160,7 @@ fun CalendarScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = Spacing.normal),
+                                .padding(horizontal = Spacing.normal, vertical = Spacing.normal),
                             shape = MaterialTheme.shapes.large,
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -252,7 +257,7 @@ fun CalendarScreen(
                         }
 
                         // Selected Day Tasks Section
-                        Column(modifier = Modifier.padding(horizontal = Spacing.normal, vertical = Spacing.large)) {
+                        Column(modifier = Modifier.padding(horizontal = Spacing.normal, vertical = Spacing.medium)) {
                             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                             val headerText = if (state.selectedDate == today) "Today's Tasks" else {
                                 state.selectedDate.run {
@@ -333,7 +338,7 @@ fun CalendarScreen(
 
                         // Month Overview Section
                         if (state.upcomingMonthTasks.isNotEmpty()) {
-                            Column(modifier = Modifier.padding(horizontal = Spacing.normal)) {
+                            Column(modifier = Modifier.padding(horizontal = Spacing.normal, vertical = Spacing.medium)) {
                                 Text(
                                     "Month Overview", 
                                     style = MaterialTheme.typography.titleLarge, 
@@ -410,7 +415,7 @@ fun CalendarTaskCard(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(Spacing.normal),
@@ -445,7 +450,7 @@ fun CalendarTaskCard(
                     )
                 }
             }
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
@@ -457,7 +462,7 @@ fun CalendarTaskCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 // Subject with task color dot indicator
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -499,7 +504,7 @@ fun CalendarTaskCard(
                     }
                 )
             }
-            
+
             IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(18.dp))
             }
@@ -509,6 +514,7 @@ fun CalendarTaskCard(
 
 @Composable
 fun OverviewTaskCard(task: Task) {
+    val isDone = task.status == TaskStatus.DONE
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val taskColor = task.colorHex.toTaskColor()
     val taskContainerColor = TaskColor.containerColorFor(
@@ -520,49 +526,46 @@ fun OverviewTaskCard(task: Task) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(Spacing.small),
+            modifier = Modifier.padding(Spacing.normal),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
         ) {
             // Date Badge with task color
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(MaterialTheme.shapes.small)
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.medium)
                     .background(taskContainerColor),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         date.dayOfMonth.toString(),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         color = taskColor,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 14.sp
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
                         date.month.name.take(3).capitalizeFirst(),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
-                        color = taskColor.copy(alpha = 0.8f),
-                        lineHeight = 8.sp
+                        color = taskColor.copy(alpha = 0.8f)
                     )
                 }
             }
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     task.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = if (isDone) TextDecoration.LineThrough else null
+                    ),
+                    color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textDecoration = if (task.status == TaskStatus.DONE)
-                        TextDecoration.LineThrough
-                    else TextDecoration.None
+                    overflow = TextOverflow.Ellipsis
                 )
                 // Subject with task color dot indicator
                 Row(
@@ -577,12 +580,12 @@ fun OverviewTaskCard(task: Task) {
                     )
                     Text(
                         task.displaySubject,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = taskColor
                     )
                 }
             }
-            
+
             // Priority Badge
             Surface(
                 shape = MaterialTheme.shapes.extraSmall,
@@ -595,7 +598,7 @@ fun OverviewTaskCard(task: Task) {
                 Text(
                     task.priority.name.lowercase(),
                     modifier = Modifier.padding(
-                        horizontal = 8.dp, vertical = 4.dp
+                        horizontal = Spacing.small, vertical = 4.dp
                     ),
                     style = MaterialTheme.typography.labelSmall,
                     color = when (task.priority) {

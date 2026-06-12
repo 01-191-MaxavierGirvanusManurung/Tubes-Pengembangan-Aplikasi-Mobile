@@ -95,14 +95,14 @@ fun ProfileScreen(navController: NavController) {
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
-                                                Icons.Default.School, 
-                                                contentDescription = "Major Icon", 
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer, 
+                                                Icons.Default.School,
+                                                contentDescription = "Major Icon",
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.size(28.dp)
                                             )
                                         }
                                     }
-                                    
+
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             state.userName,
@@ -116,7 +116,7 @@ fun ProfileScreen(navController: NavController) {
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    
+
                                     Column(horizontalAlignment = Alignment.End) {
                                         Text(
                                             "Lv ${state.level}",
@@ -131,9 +131,9 @@ fun ProfileScreen(navController: NavController) {
                                         )
                                     }
                                 }
-                                
+
                                 Spacer(Modifier.height(Spacing.normal))
-                                
+
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
                                     BadgeChip(
                                         text = "${state.dayStreak}-Day Streak",
@@ -141,7 +141,7 @@ fun ProfileScreen(navController: NavController) {
                                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
-                                    
+
                                     BadgeChip(
                                         text = "${state.completionRate}% Rate",
                                         icon = "📈",
@@ -203,18 +203,18 @@ fun ProfileScreen(navController: NavController) {
                 item {
                     Column(modifier = Modifier.padding(horizontal = Spacing.normal)) {
                         Text(
-                            "Subject Breakdown", 
+                            "Subject Breakdown",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Task distribution across subjects", 
-                            style = MaterialTheme.typography.bodySmall, 
+                            "Task distribution across subjects",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(Spacing.normal))
-                        
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.large,
@@ -232,10 +232,10 @@ fun ProfileScreen(navController: NavController) {
                                                     .background(MaterialTheme.colorScheme.primary)
                                             )
                                             Text(
-                                                stat.name, 
+                                                stat.name,
                                                 style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium, 
-                                                modifier = Modifier.width(80.dp), 
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.width(80.dp),
                                                 color = MaterialTheme.colorScheme.onSurface,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -247,9 +247,9 @@ fun ProfileScreen(navController: NavController) {
                                                 trackColor = MaterialTheme.colorScheme.surfaceVariant
                                             )
                                             Text(
-                                                stat.count.toString(), 
+                                                stat.count.toString(),
                                                 style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold, 
+                                                fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
@@ -273,13 +273,13 @@ fun ProfileScreen(navController: NavController) {
                 item {
                     Column(modifier = Modifier.padding(horizontal = Spacing.normal)) {
                         Text(
-                            "Settings", 
+                            "Settings",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(Spacing.normal))
-                        
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = MaterialTheme.shapes.large,
@@ -293,9 +293,9 @@ fun ProfileScreen(navController: NavController) {
                                     checked = state.isDarkMode,
                                     onCheckedChange = { viewModel.toggleDarkMode() }
                                 )
-                                
+
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = Spacing.normal), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                                
+
                                 SettingsToggleItem(
                                     title = "Notifikasi",
                                     subtitle = "Aktifkan pengingat tugas",
@@ -332,7 +332,7 @@ fun ProfileScreen(navController: NavController) {
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(16.dp))
                         )
-                        
+
                         Spacer(Modifier.height(Spacing.small))
                         Text(
                             "Study Hub v1.0.0",
@@ -371,7 +371,7 @@ fun BadgeChip(
             Text(icon, fontSize = 14.sp)
             Spacer(Modifier.width(4.dp))
             Text(
-                text, 
+                text,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = contentColor
@@ -412,14 +412,14 @@ fun StatCard(
             }
             Column {
                 Text(
-                    value, 
+                    value,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold, 
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    label, 
-                    style = MaterialTheme.typography.labelSmall, 
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -451,23 +451,23 @@ fun SettingsToggleItem(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                icon, 
-                contentDescription = title, 
-                tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, 
+                icon,
+                contentDescription = title,
+                tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                title, 
-                style = MaterialTheme.typography.bodyMedium, 
-                fontWeight = FontWeight.Medium, 
+                title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (subtitle != null) {
                 Text(
-                    subtitle, 
-                    style = MaterialTheme.typography.labelSmall, 
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
