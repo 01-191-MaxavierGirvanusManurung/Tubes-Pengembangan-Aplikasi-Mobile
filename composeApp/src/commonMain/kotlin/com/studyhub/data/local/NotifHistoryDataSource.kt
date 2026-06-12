@@ -2,6 +2,7 @@ package com.studyhub.data.local
 
 import com.studyhub.database.StudyHubDatabase
 import com.studyhub.domain.model.NotifHistoryItem
+import com.studyhub.domain.model.NotifType
 import com.studyhub.core.util.currentTimeMillis
 import com.studyhub.core.util.uuid
 import app.cash.sqldelight.coroutines.asFlow
@@ -15,7 +16,7 @@ interface NotifHistoryDataSource {
     fun getAll(): List<NotifHistoryItem>
     fun getUnreadCount(): Int
     fun observeUnreadCount(): Flow<Int>
-    fun insert(taskId: String, taskTitle: String, taskSubject: String, aiReason: String)
+    fun insert(taskId: String, taskTitle: String, taskSubject: String, aiReason: String, type: NotifType)
     fun markAllRead()
     fun markRead(id: String)
     fun deleteById(id: String)
@@ -35,10 +36,14 @@ class SqlDelightNotifHistoryDataSource(
                 NotifHistoryItem(
                     it.id, it.taskId, it.taskTitle,
                     it.taskSubject, it.aiReason,
-                    it.sentAt, it.isRead == 1L
+                    it.sentAt, it.isRead == 1L,
+                    type = try { NotifType.valueOf(it.type) } catch (e: Exception) { NotifType.TASK }
                 )
             }
-    } catch (e: Exception) { emptyList() }
+    } catch (e: Exception) {
+        println("NotifHistoryDataSource: getAll failed: ${e.message}")
+        emptyList()
+    }
 
     override fun getUnreadCount(): Int = try {
         database.notifHistoryEntityQueries.selectUnreadCount()
@@ -53,14 +58,23 @@ class SqlDelightNotifHistoryDataSource(
 
     override fun insert(
         taskId: String, taskTitle: String,
-        taskSubject: String, aiReason: String
-    ) = try {
-        database.notifHistoryEntityQueries.insert(
-            uuid(),
-            taskId, taskTitle, taskSubject,
-            aiReason, currentTimeMillis()
-        )
-    } catch (e: Exception) { }
+        taskSubject: String, aiReason: String,
+        type: NotifType
+    ) {
+        try {
+            database.notifHistoryEntityQueries.insert(
+                id = uuid(),
+                taskId = taskId,
+                taskTitle = taskTitle,
+                taskSubject = taskSubject,
+                aiReason = aiReason,
+                sentAt = currentTimeMillis(),
+                type = type.name
+            )
+        } catch (e: Exception) {
+            println("NotifHistoryDataSource: Insert failed: ${e.message}")
+        }
+    }
 
     override fun markAllRead() = try {
         database.notifHistoryEntityQueries.markAllRead()

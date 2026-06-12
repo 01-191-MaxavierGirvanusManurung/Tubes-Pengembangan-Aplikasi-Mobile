@@ -1,6 +1,7 @@
 package com.studyhub.domain.repository
 
 import com.studyhub.domain.model.NotifHistoryItem
+import com.studyhub.domain.model.NotifType
 import kotlinx.coroutines.flow.Flow
 
 interface NotifHistoryRepository {
@@ -11,7 +12,8 @@ interface NotifHistoryRepository {
         taskId: String,
         taskTitle: String,
         taskSubject: String,
-        aiReason: String
+        aiReason: String,
+        type: NotifType = NotifType.TASK
     )
     suspend fun markAllRead()
     suspend fun markRead(id: String)

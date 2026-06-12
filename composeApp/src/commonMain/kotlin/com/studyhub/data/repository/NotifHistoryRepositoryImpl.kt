@@ -2,6 +2,7 @@ package com.studyhub.data.repository
 
 import com.studyhub.data.local.NotifHistoryDataSource
 import com.studyhub.data.local.PreferencesDataSource
+import com.studyhub.domain.model.NotifType
 import com.studyhub.domain.repository.CleanupResult
 import com.studyhub.domain.repository.NotifHistoryRepository
 import kotlinx.coroutines.flow.first
@@ -17,9 +18,10 @@ class NotifHistoryRepositoryImpl(
     
     override suspend fun addToHistory(
         taskId: String, taskTitle: String,
-        taskSubject: String, aiReason: String
+        taskSubject: String, aiReason: String,
+        type: NotifType
     ) {
-        dataSource.insert(taskId, taskTitle, taskSubject, aiReason)
+        dataSource.insert(taskId, taskTitle, taskSubject, aiReason, type)
         runAutoCleanupIfNeeded()
     }
 

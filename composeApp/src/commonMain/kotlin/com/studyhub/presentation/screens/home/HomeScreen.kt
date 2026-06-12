@@ -119,7 +119,8 @@ fun HomeScreen(
     onNavigateToSmartPriority: () -> Unit,
     onNavigateToNotifHistory: () -> Unit,
     onNavigateToProgress: () -> Unit,
-    onNavigateToReport: () -> Unit
+    onNavigateToReport: () -> Unit,
+    openPomodoro: Boolean = false
 ) {
     val viewModel: HomeViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -161,6 +162,13 @@ fun HomeScreen(
     var showAddBottomSheet by remember { mutableStateOf(false) }
     var editingTaskId by remember { mutableStateOf<String?>(null) }
     var deleteConfirmTaskId by remember { mutableStateOf<String?>(null) }
+
+    // Automatically open Pomodoro timer if requested
+    LaunchedEffect(openPomodoro) {
+        if (openPomodoro) {
+            showFocusTimer = true
+        }
+    }
 
     val todayDateText = remember {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())

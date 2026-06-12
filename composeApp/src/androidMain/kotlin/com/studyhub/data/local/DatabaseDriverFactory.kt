@@ -19,6 +19,11 @@ actual class DatabaseDriverFactory(private val context: Context) {
                     } catch (e: Exception) {
                         // Column already exists or other error
                     }
+                    try {
+                        db.execSQL("ALTER TABLE NotifHistoryEntity ADD COLUMN type TEXT NOT NULL DEFAULT 'TASK'")
+                    } catch (e: Exception) {
+                        // Column already exists or other error
+                    }
                 }
             }
         )

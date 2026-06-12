@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.studyhub.domain.model.NotifType
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.NotifHistoryCard
@@ -145,9 +146,15 @@ fun NotifHistoryScreen(navController: NavController) {
                                 NotifHistoryCard(
                                     item = item,
                                     onTap = {
-                                        navController.navigate(
-                                            Screen.TaskDetail.createRoute(itemTaskId)
-                                        )
+                                        if (item.type == NotifType.POMODORO) {
+                                            navController.navigate(Screen.Main.createRoute(openPomodoro = true)) {
+                                                popUpTo(Screen.Main.route) { inclusive = true }
+                                            }
+                                        } else {
+                                            navController.navigate(
+                                                Screen.TaskDetail.createRoute(itemTaskId)
+                                            )
+                                        }
                                     }
                                 )
                             }

@@ -30,15 +30,35 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    openScreen: String? = null,
+    taskId: String? = null,
+    onScreenOpened: () -> Unit = {}
+) {
     val navController = rememberNavController()
 
-    // Use ViewModel instead of koinInject() to prevent context issues
     val networkViewModel: NetworkViewModel = koinViewModel()
     val isOnline by networkViewModel.isOnline.collectAsStateWithLifecycle()
 
+    LaunchedEffect(openScreen, taskId) {
+        if (openScreen != null) {
+            when (openScreen) {
+                "task_detail" -> {
+                    taskId?.let {
+                        navController.navigate(Screen.TaskDetail.createRoute(it))
+                    }
+                }
+                "pomodoro" -> {
+                    navController.navigate(Screen.Main.createRoute(openPomodoro = true)) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
+                }
+            }
+            onScreenOpened()
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
-        // Safe offline banner — at top, animated
         OfflineBanner(isOnline = isOnline)
 
         NavHost(
@@ -58,8 +78,20 @@ fun AppNavigation() {
                 fadeOut(tween(250)) + slideOutHorizontally(tween(250)) { 30 }
             }
         ) {
-            composable(Screen.Main.route) {
-                MainScreen(navController)
+            composable(
+                route = Screen.Main.route,
+                arguments = listOf(
+                    navArgument("openPomodoro") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) { backStackEntry ->
+                val openFromArg = backStackEntry.arguments?.getBoolean("openPomodoro") ?: false
+                MainScreen(
+                    rootNavController = navController, 
+                    initialOpenPomodoro = openFromArg || openScreen == "pomodoro"
+                )
             }
 
             composable(
@@ -132,7 +164,10 @@ fun AppNavigation() {
 }
 
 @Composable
-fun MainScreen(rootNavController: NavController) {
+fun MainScreen(
+    rootNavController: NavController,
+    initialOpenPomodoro: Boolean = false
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -182,7 +217,8 @@ fun MainScreen(rootNavController: NavController) {
                     onNavigateToSmartPriority = { rootNavController.navigate(Screen.SmartPriority.route) },
                     onNavigateToNotifHistory = { rootNavController.navigate(Screen.NotifHistory.route) },
                     onNavigateToProgress = { rootNavController.navigate(Screen.Progress.route) },
-                    onNavigateToReport = { rootNavController.navigate(Screen.Report.route) }
+                    onNavigateToReport = { rootNavController.navigate(Screen.Report.route) },
+                    openPomodoro = initialOpenPomodoro
                 ) 
             }
             composable(Screen.Tasks.route) { 
