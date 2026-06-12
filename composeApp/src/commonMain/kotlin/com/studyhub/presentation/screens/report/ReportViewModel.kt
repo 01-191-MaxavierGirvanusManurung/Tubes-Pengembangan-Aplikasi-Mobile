@@ -76,8 +76,14 @@ class ReportViewModel(
                 var unfinished = 0
                 monthlyTasks.forEach { task ->
                     if (task.status == TaskStatus.DONE) {
-                        if (task.completedAt != null && task.completedAt <= task.dueDate) onTime++
-                        else late++
+                        // Perbaikan: Gunakan completedAt, jika null gunakan updatedAt sebagai fallback.
+                        // Bandingkan dengan dueDate.
+                        val completionTime = task.completedAt ?: task.updatedAt
+                        if (completionTime <= task.dueDate) {
+                            onTime++
+                        } else {
+                            late++
+                        }
                     } else {
                         unfinished++
                     }
