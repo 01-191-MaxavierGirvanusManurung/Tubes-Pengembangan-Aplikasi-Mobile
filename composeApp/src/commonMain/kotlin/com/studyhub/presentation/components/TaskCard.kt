@@ -61,10 +61,7 @@ fun TaskCard(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .clickable { onClick() }
-            .graphicsLayer {
-                alpha = if (isDone) 0.75f else 1f
-            },
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),

@@ -424,10 +424,12 @@ fun TasksScreen(
                                                         .padding(end = Spacing.normal),
                                                     contentAlignment = Alignment.CenterEnd
                                                 ) {
-                                                    Icon(
-                                                        Icons.Default.Delete, "Hapus",
-                                                        tint = MaterialTheme.colorScheme.onErrorContainer
-                                                    )
+                                                    if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                                                        Icon(
+                                                            Icons.Default.Delete, "Hapus",
+                                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                                        )
+                                                    }
                                                 }
                                             },
                                             enableDismissFromStartToEnd = false
