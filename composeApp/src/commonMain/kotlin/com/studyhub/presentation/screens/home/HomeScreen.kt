@@ -33,8 +33,9 @@ import com.studyhub.presentation.components.LiquidGlassCard
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.TaskCard
-import com.studyhub.presentation.components.StudyHubHeader
+import com.studyhub.presentation.components.ScreenHeader
 import com.studyhub.presentation.navigation.Screen
+import com.studyhub.core.util.toTaskColor
 import com.studyhub.presentation.screens.home.components.FocusTimerBottomSheet
 import com.studyhub.presentation.screens.task.AddEditTaskBottomSheet
 import com.studyhub.presentation.util.GreetingUtils
@@ -45,7 +46,72 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeProgressInsideHeader(
+    completionPercentage: Int,
+    doneTasks: Int,
+    totalTasks: Int
+) {
+    if (totalTasks == 0) return
+    val progress = completionPercentage / 100f
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = Color.White.copy(alpha = 0.15f)
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(
+                Spacing.normal
+            )
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 4.dp,
+                    color = Color.White,
+                    trackColor = Color.White.copy(alpha = 0.3f)
+                )
+                Text(
+                    "${completionPercentage}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+            Column {
+                Text(
+                    "Overall Progress",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+                Text(
+                    "$doneTasks of $totalTasks tasks completed",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.85f)
+                )
+                Spacer(Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(CircleShape),
+                    color = Color(0xFFF59E0B),
+                    trackColor = Color.White.copy(alpha = 0.3f)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun HomeScreen(
     onNavigateToTasks: () -> Unit,
@@ -119,107 +185,84 @@ fun HomeScreen(
                 ) {
                     // Header Section
                     item {
-                        StudyHubHeader(
-                            title = "${GreetingUtils.getGreeting()}, ${state.userName}! ${GreetingUtils.getGreetingEmoji()}",
-                            dateText = todayDateText,
-                            subtitle = {
-                                Row {
-                                    Text("You have ", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
-                                    Text(
-                                        "${state.todayTasksCount} tasks",
-                                        color = HighlightGold,
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(" to tackle today", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            actions = {
-                                Box(contentAlignment = Alignment.Center) {
-                                    IconButton(onClick = onNavigateToNotifHistory) {
-                                        Icon(
-                                            Icons.Default.Notifications,
-                                            contentDescription = "Notifikasi",
-                                            tint = MaterialTheme.colorScheme.onPrimary
+                        ScreenHeader(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                // Date
+                                Text(
+                                    todayDateText,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                                Spacer(Modifier.height(4.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Column {
+                                        Text(
+                                            "${GreetingUtils.getGreeting()}, ${state.userName}! ${GreetingUtils.getGreetingEmoji()}",
+                                            style = MaterialTheme.typography.headlineMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
                                         )
+                                        Row {
+                                            Text("You have ", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
+                                            Text(
+                                                "${state.todayTasksCount} tasks",
+                                                color = HighlightGold,
+                                                fontWeight = FontWeight.Bold,
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(" to tackle today", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
+                                        }
                                     }
 
-                                    if (state.unreadNotifCount > 0) {
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                            contentColor = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.extraSmall)
+                                    // Bell icon
+                                    Box {
+                                        IconButton(
+                                            onClick = onNavigateToNotifHistory,
+                                            modifier = Modifier
+                                                .size(44.dp)
+                                                .background(
+                                                    Color.White.copy(alpha = 0.2f),
+                                                    CircleShape
+                                                )
                                         ) {
-                                            Text(
-                                                if (state.unreadNotifCount > 99) "99+"
-                                                else state.unreadNotifCount.toString(),
-                                                style = MaterialTheme.typography.labelSmall
+                                            Icon(
+                                                Icons.Default.Notifications,
+                                                contentDescription = "Notifikasi",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(22.dp)
                                             )
                                         }
-                                    }
-                                }
-                            },
-                            content = {
-                                Box {
-                                    LiquidGlassCard(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        borderAlpha = 0.3f
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(54.dp)) {
-                                                Canvas(modifier = Modifier.fillMaxSize()) {
-                                                    drawArc(
-                                                        color = Color.White.copy(alpha = 0.15f),
-                                                        startAngle = 0f,
-                                                        sweepAngle = 360f,
-                                                        useCenter = false,
-                                                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                                                    )
-                                                    drawArc(
-                                                        color = HighlightGold,
-                                                        startAngle = -90f,
-                                                        sweepAngle = (state.completionPercentage / 100f) * 360f,
-                                                        useCenter = false,
-                                                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                                                    )
-                                                }
+                                        if (state.unreadNotifCount > 0) {
+                                            Badge(
+                                                containerColor = Color(0xFFF59E0B),
+                                                modifier = Modifier.align(Alignment.TopEnd)
+                                            ) {
                                                 Text(
-                                                    "${state.completionPercentage}%",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onPrimary
-                                                )
-                                            }
-                                            
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(
-                                                    "Overall Progress",
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onPrimary
-                                                )
-                                                Spacer(Modifier.height(Spacing.extraSmall))
-                                                LinearProgressIndicator(
-                                                    progress = { state.completionPercentage / 100f },
-                                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
-                                                    color = HighlightGold,
-                                                    trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-                                                )
-                                                Text(
-                                                    "${state.doneTasks} of ${state.totalTasks} tasks completed",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                                    if (state.unreadNotifCount > 9) "9+"
+                                                    else state.unreadNotifCount.toString()
                                                 )
                                             }
                                         }
                                     }
                                 }
+
+                                Spacer(Modifier.height(Spacing.normal))
+
+                                // Overall progress card inside header
+                                HomeProgressInsideHeader(
+                                    completionPercentage = state.completionPercentage,
+                                    doneTasks = state.doneTasks,
+                                    totalTasks = state.totalTasks
+                                )
                             }
-                        )
+                        }
                     }
 
                     // Stat Cards Row
@@ -235,14 +278,12 @@ fun HomeScreen(
                         }
                     }
 
-                    // Start Focus Session Button
+                    // Pomodoro Shortcut Card
                     item {
-                        Box(modifier = Modifier.padding(horizontal = Spacing.normal)) {
-                            FocusSessionButton(
-                                durationMins = state.pomodoroWorkDuration,
-                                onClick = { showFocusTimer = true }
-                            )
-                        }
+                        PomodoroShortcutCard(
+                            onClick = { showFocusTimer = true },
+                            modifier = Modifier.padding(horizontal = Spacing.normal)
+                        )
                     }
 
                     // Upcoming Tasks Section Header
@@ -254,7 +295,7 @@ fun HomeScreen(
                         ) {
                             Text(
                                 "Upcoming Tasks",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             TextButton(onClick = onNavigateToTasks) {
@@ -293,169 +334,29 @@ fun HomeScreen(
                         }
                     }
 
-                    // Subject Progress Section Header
+                    // Subject Progress Section
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Subject Progress",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            TextButton(onClick = onNavigateToProgress) {
-                                Text("Details", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
-                    
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.normal),
-                            shape = MaterialTheme.shapes.large,
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                        ) {
-                            Column(modifier = Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.normal)) {
-                                state.subjectStats.forEach { stat ->
-                                    key(stat.name) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                                            Box(
-                                                Modifier
-                                                    .size(Spacing.small)
-                                                    .clip(CircleShape)
-                                                    .background(MaterialTheme.colorScheme.primary)
-                                            )
-                                            Text(
-                                                stat.name, 
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.Medium,
-                                                modifier = Modifier.width(80.dp),
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            LinearProgressIndicator(
-                                                progress = { stat.completionRate / 100f },
-                                                modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
-                                                color = MaterialTheme.colorScheme.primary,
-                                                trackColor = MaterialTheme.colorScheme.surfaceVariant
-                                            )
-                                            Text(
-                                                "${stat.doneCount}/${stat.totalCount}", 
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                    }
-                                }
-                                if (state.subjectStats.isEmpty()) {
-                                    Text(
-                                        "Belum ada data mata kuliah.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
+                        SubjectProgressSection(
+                            subjectStats = state.subjectStats,
+                            onDetailsClick = onNavigateToProgress,
+                            modifier = Modifier.padding(horizontal = Spacing.normal)
+                        )
                     }
 
                     // Smart Priority Shortcut
                     item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.normal),
+                        SmartPriorityShortcut(
                             onClick = onNavigateToSmartPriority,
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            ),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(Spacing.normal),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-                                ) {
-                                    Icon(
-                                        Icons.Default.AutoAwesome, "AI Priority",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            "Smart Priority",
-                                            style = MaterialTheme.typography.titleSmall
-                                        )
-                                        Text(
-                                            "AI akan urutkan tugasmu",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                Icon(
-                                    Icons.Default.ChevronRight, "Buka",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                            modifier = Modifier.padding(horizontal = Spacing.normal)
+                        )
                     }
 
-                    // Progress Shortcut
+                    // Progress Shortcut Card (Secondary)
                     item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = Spacing.normal),
+                        ProgressShortcutCard(
                             onClick = onNavigateToProgress,
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            ),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(Spacing.normal),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.small)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Insights, "Statistik",
-                                        tint = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Column {
-                                        Text(
-                                            "Progress",
-                                            style = MaterialTheme.typography.titleSmall
-                                        )
-                                        Text(
-                                            "Lihat statistik belajarmu",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                Icon(
-                                    Icons.Default.ChevronRight, "Buka",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                            modifier = Modifier.padding(horizontal = Spacing.normal)
+                        )
                     }
 
                     // Streak Card
@@ -626,6 +527,251 @@ fun StatBox(modifier: Modifier, label: String, value: String, icon: ImageVector,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+fun PomodoroShortcutCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF5C7A5C)  // dark olive green
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.normal),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(
+                    Spacing.medium
+                )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(Color.White.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Timer, null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Column {
+                    Text(
+                        "Start Focus Session",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        "Pomodoro · 25 min work",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+            Icon(
+                Icons.Default.ChevronRight, null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun SubjectProgressSection(
+    subjectStats: List<SubjectHomeStat>,
+    onDetailsClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Subject Progress",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            TextButton(onClick = onDetailsClick) {
+                Text("Details")
+            }
+        }
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(Spacing.normal),
+                verticalArrangement = Arrangement.spacedBy(Spacing.medium)
+            ) {
+                if (subjectStats.isEmpty()) {
+                    Text(
+                        "Belum ada data mata kuliah.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    subjectStats.take(3).forEach { stat ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(
+                                Spacing.small
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                            Text(
+                                stat.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.width(80.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            LinearProgressIndicator(
+                                progress = { stat.completionRate / 100f },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(6.dp)
+                                    .clip(CircleShape),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            Text(
+                                "${stat.doneCount}/${stat.totalCount}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.width(30.dp),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SmartPriorityShortcut(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.normal),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+            ) {
+                Icon(
+                    Icons.Default.AutoAwesome, "AI Priority",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        "Smart Priority",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "AI akan urutkan tugasmu",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Icon(
+                Icons.Default.ChevronRight, "Buka",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun ProgressShortcutCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Row(
+            modifier = Modifier.padding(Spacing.normal),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+            ) {
+                Icon(
+                    Icons.Default.Insights, "Statistik",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        "Progress",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Lihat statistik belajarmu",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Icon(
+                Icons.Default.ChevronRight, "Buka",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

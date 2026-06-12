@@ -47,28 +47,26 @@ class PreferencesRepositoryImpl(
         val now = Clock.System.now()
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         
+        if (prefs.lastUsageTimestamp == 0L) {
+            dataSource.updateStreak(1, 1, now.toEpochMilliseconds())
+            return 1
+        }
+
         val lastUsageDate = Instant.fromEpochMilliseconds(prefs.lastUsageTimestamp)
             .toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-        if (lastUsageDate == today && prefs.currentStreak > 0) return null // Sudah update hari ini
-
-        // Cek apakah hari ini Senin
-        if (today.dayOfWeek == DayOfWeek.MONDAY) {
-            if (lastUsageDate != today) {
-                dataSource.updateStreak(1, now.toEpochMilliseconds())
-                return 1
-            }
-            return null
-        }
+        if (lastUsageDate == today) return null // Sudah update hari ini
 
         val yesterday = today.minus(1, DateTimeUnit.DAY)
         
         return if (lastUsageDate == yesterday) {
             val newStreak = prefs.currentStreak + 1
-            dataSource.updateStreak(newStreak, now.toEpochMilliseconds())
+            val newLongest = if (newStreak > prefs.longestStreak) newStreak else prefs.longestStreak
+            dataSource.updateStreak(newStreak, newLongest, now.toEpochMilliseconds())
             newStreak
         } else {
-            dataSource.updateStreak(1, now.toEpochMilliseconds())
+            // Streak putus
+            dataSource.updateStreak(1, prefs.longestStreak, now.toEpochMilliseconds())
             1
         }
     }

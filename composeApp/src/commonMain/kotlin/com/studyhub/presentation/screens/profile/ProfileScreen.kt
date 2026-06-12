@@ -26,7 +26,7 @@ import androidx.navigation.NavController
 import com.studyhub.core.util.SystemAppearance
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
-import com.studyhub.presentation.components.StudyHubHeader
+import com.studyhub.presentation.components.ScreenHeader
 import com.studyhub.presentation.theme.*
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -53,17 +53,21 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 // ── Header ──
                 item {
-                    StudyHubHeader(
-                        title = "Profile",
-                        subtitle = {
+                    ScreenHeader {
+                        Column {
                             Text(
-                                "Your study dashboard", 
-                                color = Color.White.copy(alpha = 0.8f), 
-                                style = MaterialTheme.typography.bodyMedium
+                                "Profile",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                            Text(
+                                "Your study dashboard",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
                 }
 
                 // ── Profile Card ──

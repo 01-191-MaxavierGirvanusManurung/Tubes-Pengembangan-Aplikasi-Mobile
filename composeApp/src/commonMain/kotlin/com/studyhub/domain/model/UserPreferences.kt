@@ -13,5 +13,6 @@ data class UserPreferences(
     val pomodoroLongBreak: Int = 15,
     val pomodoroSessionsBeforeLong: Int = 4,
     val currentStreak: Int = 0,
+    val longestStreak: Int = 0,
     val lastUsageTimestamp: Long = 0
 )

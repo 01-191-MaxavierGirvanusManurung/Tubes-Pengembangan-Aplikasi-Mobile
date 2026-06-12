@@ -23,8 +23,6 @@ fun ProgressScreen(navController: NavController) {
     val viewModel: ProgressViewModel = koinViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) { viewModel.loadStats() }
-
     Scaffold(
         topBar = {
             TopAppBar(

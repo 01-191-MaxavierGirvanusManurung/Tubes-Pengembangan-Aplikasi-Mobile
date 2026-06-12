@@ -53,8 +53,11 @@ val OnErrorDark = Color(0xFF601410)
 
 // ── Semantic Colors ──
 val PriorityHigh = Color(0xFFFF4D4D)
+val PriorityHighContainer = Color(0xFFFF4D4D).copy(alpha = 0.15f)
 val PriorityMedium = HighlightGold
+val PriorityMediumContainer = HighlightGold.copy(alpha = 0.15f)
 val PriorityLow = Color(0xFF22C55E)
+val PriorityLowContainer = Color(0xFF22C55E).copy(alpha = 0.15f)
 
 val LightColorScheme = lightColorScheme(
     primary = Primary,

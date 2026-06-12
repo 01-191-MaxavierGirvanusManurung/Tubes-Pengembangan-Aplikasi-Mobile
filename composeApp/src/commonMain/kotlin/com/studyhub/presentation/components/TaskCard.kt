@@ -1,6 +1,7 @@
 package com.studyhub.presentation.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,9 +27,13 @@ import androidx.compose.ui.unit.sp
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
-import com.studyhub.core.util.formatTimeOnly
+import com.studyhub.core.util.TaskColor
+import com.studyhub.core.util.toTaskColor
 import com.studyhub.presentation.theme.*
 import kotlinx.datetime.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun TaskCard(
@@ -35,185 +43,211 @@ fun TaskCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val isDone = task.status == TaskStatus.DONE
     val now = com.studyhub.core.util.currentTimeMillis()
     val isOverdue = !isDone && task.dueDate < now
     
-    val statusIcon = when {
-        isDone -> Icons.Default.CheckCircle
-        isOverdue -> Icons.Default.ErrorOutline
-        task.status == TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-        else -> Icons.Default.Schedule 
-    }
+    val daysLeft = (task.dueDate - now) / 86_400_000
+    val hoursLeft = (task.dueDate - now) / 3_600_000
 
-    val statusColor = when {
-        isDone -> MaterialTheme.colorScheme.primary // Semantic: Success-ish
-        isOverdue -> MaterialTheme.colorScheme.error
-        task.status == TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    
-    val subjectAccentColor = when {
-        isOverdue -> MaterialTheme.colorScheme.error
-        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> MaterialTheme.colorScheme.primary
-        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.tertiary
-    }
+    val taskColor = task.colorHex.toTaskColor()
+    val taskContainerColor = TaskColor.containerColorFor(
+        task.colorHex, isDark
+    )
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .graphicsLayer {
+                alpha = if (isDone) 0.75f else 1f
+            },
         colors = CardDefaults.cardColors(
-            containerColor = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                             else MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = MaterialTheme.shapes.medium,
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (isOverdue) 1.5.dp else 1.dp,
-            color = if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.outlineVariant
-        )
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isDone) 0.dp else 2.dp
+        ),
+        shape = MaterialTheme.shapes.large
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(Spacing.normal),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(
+                Spacing.small
+            )
         ) {
-            // Left Accent Strip
+            // ── Left color bar (task color) ──
             Box(
                 modifier = Modifier
-                    .padding(vertical = Spacing.normal)
                     .width(4.dp)
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(subjectAccentColor)
+                    .height(52.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isDone) MaterialTheme.colorScheme.outline
+                        else taskColor
+                    )
             )
-            
-            Row(
+
+            // ── Status icon with task color container ──
+            Box(
                 modifier = Modifier
-                    .padding(Spacing.normal)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.medium)
+                    .size(40.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(
+                        if (isDone)
+                            MaterialTheme.colorScheme.surfaceVariant
+                        else taskContainerColor
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = statusIcon,
-                    contentDescription = "Status: ${task.status.name}",
-                    tint = statusColor,
-                    modifier = Modifier.size(24.dp)
+                    imageVector = when {
+                        isDone -> Icons.Default.CheckCircle
+                        isOverdue -> Icons.Default.Warning
+                        task.status == TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
+                        else -> Icons.Default.RadioButtonUnchecked
+                    },
+                    contentDescription = task.status.name,
+                    tint = when {
+                        isDone -> MaterialTheme.colorScheme.onSurfaceVariant
+                        isOverdue -> MaterialTheme.colorScheme.error
+                        else -> taskColor
+                    },
+                    modifier = Modifier.size(20.dp)
                 )
+            }
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)
+            // ── Content ──
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    task.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textDecoration = if (isDone)
+                        TextDecoration.LineThrough
+                    else TextDecoration.None,
+                    color = if (isDone)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(
+                        4.dp
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = task.title,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            textDecoration = if (isDone) TextDecoration.LineThrough else null
-                        ),
-                        color = when {
-                            isDone -> MaterialTheme.colorScheme.onSurfaceVariant
-                            isOverdue -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurface
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Subject chip
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        val subjectBg = if (isOverdue) MaterialTheme.colorScheme.errorContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant
-                        val subjectText = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer
-                                          else MaterialTheme.colorScheme.onSurfaceVariant
-
-                        TaskTag(task.displaySubject, subjectBg, subjectText)
-                        
-                        val (priorityBg, priorityText) = when {
-                            task.priority == Priority.HIGH -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-                            task.priority == Priority.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-                            else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-                        }
-                        TaskTag(task.priority.name.lowercase(), priorityBg, priorityText)
-                    }
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    val deadline = formatDeadline(task.dueDate)
-                    Text(
-                        deadline,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = when {
-                            deadline == "Overdue" -> MaterialTheme.colorScheme.error
-                            deadline == "Tomorrow" -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    AnimatedVisibility(visible = isOverdue) {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.errorContainer
-                        ) {
-                            Text(
-                                "Terlambat",
-                                modifier = Modifier.padding(horizontal = Spacing.small, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-                
-                Row {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Edit Tugas",
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(18.dp)
+                        Text(
+                            task.displaySubject,
+                            modifier = Modifier.padding(
+                                horizontal = 6.dp, vertical = 2.dp
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                    // Priority chip — uses task color tint
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = if (isDark)
+                            taskColor.copy(alpha = 0.2f)
+                        else taskColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            task.priority.name.lowercase(),
+                            modifier = Modifier.padding(
+                                horizontal = 6.dp, vertical = 2.dp
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = taskColor
+                        )
+                    }
+                }
+            }
+
+            // ── Right section: deadline + actions ──
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Deadline text
+                Text(
+                    when {
+                        isDone -> "Done ✓"
+                        isOverdue -> "Overdue"
+                        daysLeft < 1 -> "${hoursLeft}h left"
+                        daysLeft < 2 -> "Tomorrow"
+                        else -> "${daysLeft}d left"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = when {
+                        isDone -> MaterialTheme.colorScheme.onSurfaceVariant
+                        isOverdue || daysLeft < 1 -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                // Time
+                Text(
+                    SimpleDateFormat("HH:mm", Locale.getDefault())
+                        .format(Date(task.dueDate)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // ── "Terlambat" badge — subtle, not aggressive ──
+                if (isOverdue) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            "Terlambat",
+                            modifier = Modifier.padding(
+                                horizontal = 6.dp, vertical = 2.dp
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                // Edit button
+                Row {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(28.dp)
+                    ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Hapus Tugas",
+                            contentDescription = "Hapus",
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun TaskTag(text: String, containerColor: Color, textColor: Color) {
-    Surface(
-        color = containerColor,
-        shape = CircleShape
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = Spacing.small, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-            color = textColor,
-            fontWeight = FontWeight.Medium
-        )
     }
 }
 
@@ -228,27 +262,9 @@ fun TaskGridCard(
     val isDone = task.status == TaskStatus.DONE
     val now = com.studyhub.core.util.currentTimeMillis()
     val isOverdue = !isDone && task.dueDate < now
-
-    val statusIcon = when {
-        isDone -> Icons.Default.CheckCircle
-        isOverdue -> Icons.Default.ErrorOutline
-        task.status == TaskStatus.IN_PROGRESS -> Icons.Default.Schedule
-        else -> Icons.Default.Schedule
-    }
-    
-    val statusColor = when {
-        isDone -> MaterialTheme.colorScheme.primary
-        isOverdue -> MaterialTheme.colorScheme.error
-        task.status == TaskStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    
-    val subjectAccentColor = when {
-        isOverdue -> MaterialTheme.colorScheme.error
-        task.subject.lowercase() == "mathematics" || task.subject.lowercase() == "calculus" -> MaterialTheme.colorScheme.primary
-        task.subject.lowercase() == "chemistry" || task.subject.lowercase() == "code" -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.tertiary
-    }
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val taskColor = task.colorHex.toTaskColor()
+    val taskContainerColor = TaskColor.containerColorFor(task.colorHex, isDark)
 
     Card(
         modifier = modifier
@@ -256,16 +272,10 @@ fun TaskGridCard(
             .wrapContentHeight()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isOverdue) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                             else MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = MaterialTheme.shapes.medium,
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (isOverdue) 1.5.dp else 1.dp,
-            color = if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                    else MaterialTheme.colorScheme.outlineVariant
-        )
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier.padding(Spacing.medium),
@@ -280,21 +290,25 @@ fun TaskGridCard(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(MaterialTheme.shapes.small)
-                        .background(subjectAccentColor.copy(alpha = 0.1f)),
+                        .background(taskContainerColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         task.subject.take(1).uppercase(),
                         style = MaterialTheme.typography.titleSmall,
-                        color = subjectAccentColor,
+                        color = taskColor,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 
                 Icon(
-                    imageVector = statusIcon,
-                    contentDescription = "Status: ${task.status.name}",
-                    tint = statusColor,
+                    imageVector = when {
+                        isDone -> Icons.Default.CheckCircle
+                        isOverdue -> Icons.Default.Warning
+                        else -> Icons.Default.Schedule
+                    },
+                    contentDescription = "Status",
+                    tint = if (isOverdue) MaterialTheme.colorScheme.error else taskColor,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -305,7 +319,7 @@ fun TaskGridCard(
                     fontWeight = FontWeight.Bold,
                     textDecoration = if (isDone) TextDecoration.LineThrough else null
                 ),
-                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.defaultMinSize(minHeight = 36.dp)
@@ -317,17 +331,11 @@ fun TaskGridCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val deadline = formatDeadline(task.dueDate)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
-                    Text(
-                        deadline,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = when {
-                            deadline == "Overdue" -> MaterialTheme.colorScheme.error
-                            deadline == "Tomorrow" -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
+                Text(
+                    deadline,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                     IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {

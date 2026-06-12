@@ -20,6 +20,7 @@ object PreferencesKeys {
     val POMODORO_LONG_BREAK = intPreferencesKey("pomodoro_long_break")
     val POMODORO_SESSIONS_BEFORE_LONG = intPreferencesKey("pomodoro_sessions_before_long")
     val CURRENT_STREAK = intPreferencesKey("current_streak")
+    val LONGEST_STREAK = intPreferencesKey("longest_streak")
     val LAST_USAGE_TIMESTAMP = longPreferencesKey("last_usage_timestamp")
     val NOTIF_AUTO_DELETE_ENABLED = booleanPreferencesKey("notif_auto_delete_enabled")
     val NOTIF_MAX_HISTORY_COUNT = intPreferencesKey("notif_max_history_count")
@@ -110,9 +111,10 @@ class PreferencesDataSource(
         }
     }
 
-    suspend fun updateStreak(streak: Int, timestamp: Long) {
+    suspend fun updateStreak(streak: Int, longest: Int, timestamp: Long) {
         dataStore.edit { prefs ->
             prefs[PreferencesKeys.CURRENT_STREAK] = streak
+            prefs[PreferencesKeys.LONGEST_STREAK] = longest
             prefs[PreferencesKeys.LAST_USAGE_TIMESTAMP] = timestamp
         }
     }
@@ -154,6 +156,7 @@ class PreferencesDataSource(
                 pomodoroLongBreak = prefs[PreferencesKeys.POMODORO_LONG_BREAK] ?: 15,
                 pomodoroSessionsBeforeLong = prefs[PreferencesKeys.POMODORO_SESSIONS_BEFORE_LONG] ?: 4,
                 currentStreak = prefs[PreferencesKeys.CURRENT_STREAK] ?: 0,
+                longestStreak = prefs[PreferencesKeys.LONGEST_STREAK] ?: 0,
                 lastUsageTimestamp = prefs[PreferencesKeys.LAST_USAGE_TIMESTAMP] ?: 0
             )
         }

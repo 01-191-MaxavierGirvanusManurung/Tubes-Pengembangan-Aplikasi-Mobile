@@ -6,6 +6,7 @@ import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.Subject
 import com.studyhub.domain.model.Task
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.core.util.TaskColor
 import com.studyhub.domain.usecase.subject.AddSubjectUseCase
 import com.studyhub.domain.usecase.subject.GetAllSubjectsUseCase
 import com.studyhub.domain.usecase.task.AddTaskUseCase
@@ -109,6 +110,10 @@ class AddEditTaskViewModel(
             val existingCreatedAt = if (currentState is AddEditTaskUiState.Success) {
                 currentState.existingTask?.createdAt
             } else null
+            
+            val existingColorHex = if (currentState is AddEditTaskUiState.Success) {
+                currentState.existingTask?.colorHex
+            } else null
 
             _uiState.update { AddEditTaskUiState.Loading }
             try {
@@ -127,7 +132,8 @@ class AddEditTaskViewModel(
                     isDeleted = false,
                     completedAt = if (status == TaskStatus.DONE) now else null,
                     createdAt = existingCreatedAt ?: now,
-                    updatedAt = now
+                    updatedAt = now,
+                    colorHex = existingColorHex ?: TaskColor.random()
                 )
                 if (taskId == null) {
                     addTaskUseCase(task)

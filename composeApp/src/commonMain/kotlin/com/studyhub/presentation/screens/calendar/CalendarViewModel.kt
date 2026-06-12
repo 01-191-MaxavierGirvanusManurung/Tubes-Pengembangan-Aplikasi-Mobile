@@ -8,6 +8,7 @@ import com.studyhub.domain.model.TaskStatus
 import com.studyhub.domain.usecase.task.DeleteTaskUseCase
 import com.studyhub.domain.usecase.task.GetAllTasksUseCase
 import com.studyhub.domain.usecase.task.GetTasksByDateUseCase
+import com.studyhub.core.util.TaskColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,7 +24,7 @@ sealed interface CalendarUiState {
     data class Success(
         val selectedDate: LocalDate,
         val tasksOnSelectedDate: List<Task>,
-        val taskDates: Set<LocalDate>,
+        val calendarDays: Map<LocalDate, List<String>>, // Date to colorHex list
         val upcomingMonthTasks: List<Task>,
         val upcomingDeadlinesCount: Int
     ) : CalendarUiState
@@ -54,7 +55,15 @@ class CalendarViewModel(
         _currentMonth
     ) { allTasks, tasksOnDate, selectedDate, currentMonth ->
         try {
-            val datesWithTasks = allTasks.map { it.dueDate.toLocalDate() }.toSet()
+            val dayMap = mutableMapOf<LocalDate, MutableList<String>>()
+            allTasks.filter { !it.isDeleted }.forEach { task ->
+                val date = task.dueDate.toLocalDate()
+                val colors = dayMap.getOrPut(date) { mutableListOf() }
+                if (colors.size < 3) {
+                    colors.add(task.colorHex)
+                }
+            }
+
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
             val upcomingCount = allTasks.count {
@@ -71,7 +80,7 @@ class CalendarViewModel(
             CalendarUiState.Success(
                 selectedDate = selectedDate,
                 tasksOnSelectedDate = tasksOnDate,
-                taskDates = datesWithTasks,
+                calendarDays = dayMap,
                 upcomingMonthTasks = monthTasks,
                 upcomingDeadlinesCount = upcomingCount
             )

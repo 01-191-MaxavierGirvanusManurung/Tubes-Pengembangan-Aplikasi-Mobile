@@ -40,7 +40,7 @@ import com.studyhub.presentation.components.EmptyStateView
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.components.GlassIconButton
-import com.studyhub.presentation.components.StudyHubHeader
+import com.studyhub.presentation.components.ScreenHeader
 import com.studyhub.presentation.components.TaskCard
 import com.studyhub.presentation.components.TaskGridCard
 import com.studyhub.presentation.theme.*
@@ -104,70 +104,128 @@ fun TasksScreen(
             val state = uiState
             
             // Header Section
-            StudyHubHeader(
-                title = "My Tasks",
-                subtitle = {
-                    if (state is TasksUiState.Success) {
-                        Text("${state.filteredTasks.size} tasks found", color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodyMedium)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                actions = {
-                    GlassIconButton(
-                        icon = Icons.Default.AutoAwesome,
-                        contentDescription = "Smart Priority AI",
-                        onClick = onNavigateToSmartPriority
-                    )
-                    if (state is TasksUiState.Success) {
-                        GlassIconButton(
-                            icon = if (state.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
-                            contentDescription = if (state.viewMode == ViewMode.LIST) "Tampilan Grid" else "Tampilan List",
-                            onClick = { viewModel.toggleViewMode() }
-                        )
-                    }
-                },
-                content = {
-                    // Glass Search Bar
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color.White.copy(alpha = 0.22f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+            ScreenHeader {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (state is TasksUiState.Success) {
-                            TextField(
-                                value = state.searchQuery,
-                                onValueChange = viewModel::setSearchQuery,
-                                modifier = Modifier.fillMaxSize(),
-                                placeholder = { 
-                                    Text("Search tasks or subjects...", color = Color.White.copy(alpha = 0.60f), style = MaterialTheme.typography.bodyMedium) 
-                                },
-                                leadingIcon = { 
-                                    Icon(Icons.Default.Search, contentDescription = "Cari", tint = Color.White.copy(alpha = 0.8f)) 
-                                },
-                                colors = TextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                                singleLine = true
+                        Column {
+                            Text(
+                                "My Tasks",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
+                            if (state is TasksUiState.Success) {
+                                Text(
+                                    "${state.filteredTasks.size} tasks found",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.85f)
+                                )
+                            }
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(
+                                Spacing.small
+                            )
+                        ) {
+                            IconButton(
+                                onClick = onNavigateToSmartPriority,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(
+                                        Color.White.copy(alpha = 0.2f),
+                                        CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = "AI Priority",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            if (state is TasksUiState.Success) {
+                                IconButton(
+                                    onClick = { viewModel.toggleViewMode() },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(
+                                            Color.White.copy(alpha = 0.2f),
+                                            CircleShape
+                                        )
+                                ) {
+                                    Icon(
+                                        if (state.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.Default.List,
+                                        contentDescription = "Toggle view",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
                         }
                     }
+
+                    Spacer(Modifier.height(Spacing.normal))
+
+                    // Search bar inside header
+                    if (state is TasksUiState.Success) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = viewModel::setSearchQuery,
+                            placeholder = {
+                                Text(
+                                    "Search tasks or subjects...",
+                                    color = Color.White.copy(alpha = 0.7f)
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search, null,
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
+                            trailingIcon = {
+                                if (state.searchQuery.isNotBlank()) {
+                                    IconButton(onClick = {
+                                        viewModel.setSearchQuery("")
+                                    }) {
+                                        Icon(
+                                            Icons.Default.Close, null,
+                                            tint = Color.White.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.White.copy(alpha = 0.8f),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = Color.White.copy(alpha = 0.15f),
+                                unfocusedContainerColor = Color.White.copy(alpha = 0.1f)
+                            ),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Search
+                            ),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                        )
+                    }
                 }
-            )
+            }
 
             // Body Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 160.dp) 
+                    .padding(top = 180.dp)
             ) {
                 when (state) {
                     is TasksUiState.Loading -> LoadingView()
