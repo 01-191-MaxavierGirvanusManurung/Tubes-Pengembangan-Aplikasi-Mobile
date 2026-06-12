@@ -199,7 +199,11 @@ fun TaskDetailScreen(
                                 Text("Jam", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                                     Icon(Icons.Default.Schedule, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text(Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        task.dueTime ?: Instant.fromEpochMilliseconds(task.dueDate).formatTimeOnly(),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             }
                         }

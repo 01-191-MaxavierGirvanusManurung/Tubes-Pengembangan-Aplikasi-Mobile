@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
 import com.studyhub.core.util.toLocalMillisFromUtc
+import com.studyhub.core.util.combineDateAndTime
 import com.studyhub.presentation.theme.*
 import kotlinx.datetime.*
 import org.koin.compose.viewmodel.koinViewModel
@@ -53,12 +54,19 @@ fun AddEditTaskBottomSheet(
     var priority by remember { mutableStateOf(Priority.MEDIUM) }
     var status by remember { mutableStateOf(TaskStatus.TODO) }
     var dueDate by remember { mutableStateOf(initialDate ?: Clock.System.now().toEpochMilliseconds()) }
+    var dueTime by remember { mutableStateOf<String?>(null) }
     var estimatedMinutes by remember { mutableStateOf(60) }
     var isInitialized by remember { mutableStateOf(false) }
     
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     var showAddSubjectDialog by remember { mutableStateOf(false) }
     var newSubjectName by remember { mutableStateOf("") }
+
+    val actualDeadline = remember(dueDate, dueTime) {
+        combineDateAndTime(dueDate, dueTime)
+    }
+    val isDeadlinePast = actualDeadline < Clock.System.now().toEpochMilliseconds()
 
     LaunchedEffect(taskId) {
         isInitialized = false
@@ -73,6 +81,7 @@ fun AddEditTaskBottomSheet(
             priority = Priority.MEDIUM
             status = TaskStatus.TODO
             dueDate = initialDate ?: Clock.System.now().toEpochMilliseconds()
+            dueTime = null
             estimatedMinutes = 60
             isInitialized = true
         }
@@ -88,6 +97,7 @@ fun AddEditTaskBottomSheet(
                 priority = task.priority
                 status = task.status
                 dueDate = task.dueDate
+                dueTime = task.dueTime
                 estimatedMinutes = task.estimatedMinutes
                 isInitialized = true
             }
@@ -248,8 +258,6 @@ fun AddEditTaskBottomSheet(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.normal)) {
                     // Due Date
                     Column(modifier = Modifier.weight(1f)) {
-                        val isDeadlinePast = dueDate > 0 && dueDate < Clock.System.now().toEpochMilliseconds()
-                        
                         Text(
                             "Due Date *", 
                             style = MaterialTheme.typography.titleSmall, 
@@ -283,39 +291,52 @@ fun AddEditTaskBottomSheet(
                         )
                     }
 
-                    // Est Time
+                    // Due Time
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Est. Time (min)", 
+                            "Due Time", 
                             style = MaterialTheme.typography.titleSmall, 
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(Spacing.small))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(MaterialTheme.shapes.medium)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            IconButton(onClick = { if (estimatedMinutes > 5) estimatedMinutes -= 5 }) {
-                                Icon(Icons.Default.Remove, "Kurangi Estimasi", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedTextField(
+                            value = dueTime ?: "--:--",
+                            onValueChange = {},
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary
+                            ),
+                            trailingIcon = {
+                                IconButton(onClick = { showTimePicker = true }) {
+                                    Icon(Icons.Default.Schedule, "Pilih Jam", Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                }
                             }
-                            Text(
-                                text = estimatedMinutes.toString(),
-                                modifier = Modifier.weight(1f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            IconButton(onClick = { estimatedMinutes += 5 }) {
-                                Icon(Icons.Default.Add, "Tambah Estimasi", Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+                        )
                     }
                 }
+
+                Spacer(Modifier.height(Spacing.normal))
+                
+                // Est Time Slider
+                Text(
+                    "Est. Time (min): $estimatedMinutes", 
+                    style = MaterialTheme.typography.titleSmall, 
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Slider(
+                    value = estimatedMinutes.toFloat(),
+                    onValueChange = { estimatedMinutes = it.toInt() },
+                    valueRange = 0f..240f,
+                    steps = 23,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(Modifier.height(Spacing.normal))
 
@@ -461,7 +482,8 @@ fun AddEditTaskBottomSheet(
                                 subject = selectedSubject,
                                 priority = priority,
                                 status = status,
-                                dueDate = dueDate,
+                                dueDate = actualDeadline,
+                                dueTime = dueTime,
                                 estimatedMinutes = estimatedMinutes
                             )
                         },
@@ -471,7 +493,7 @@ fun AddEditTaskBottomSheet(
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         shape = MaterialTheme.shapes.medium,
-                        enabled = title.isNotBlank() && (dueDate >= Clock.System.now().toEpochMilliseconds()) && 
+                        enabled = title.isNotBlank() && (!isDeadlinePast || taskId != null) &&
                                 (state !is AddEditTaskUiState.Loading)
                     ) {
                         if (state is AddEditTaskUiState.Loading) {
@@ -511,6 +533,33 @@ fun AddEditTaskBottomSheet(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    // Time Picker Dialog
+    if (showTimePicker) {
+        val initialHour = dueTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 12
+        val initialMinute = dueTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true
+        )
+        
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    dueTime = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            }
+        )
     }
     
     // Add Subject Dialog

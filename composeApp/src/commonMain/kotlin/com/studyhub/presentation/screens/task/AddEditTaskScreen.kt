@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.studyhub.domain.model.Priority
 import com.studyhub.domain.model.TaskStatus
+import com.studyhub.core.util.combineDateAndTime
 import com.studyhub.presentation.components.LoadingView
 import com.studyhub.presentation.components.ErrorView
 import com.studyhub.presentation.theme.*
@@ -53,9 +55,16 @@ fun AddEditTaskScreen(
     var dueDate by remember { 
         mutableStateOf(date?.toLongOrNull() ?: Clock.System.now().toEpochMilliseconds()) 
     }
+    var dueTime by remember { mutableStateOf<String?>(null) }
     var estimatedMinutes by remember { mutableStateOf(30) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     var expandedSubjects by remember { mutableStateOf(false) }
+
+    val actualDeadline = remember(dueDate, dueTime) {
+        combineDateAndTime(dueDate, dueTime)
+    }
+    val isDeadlinePast = actualDeadline < Clock.System.now().toEpochMilliseconds()
 
     LaunchedEffect(taskId) {
         viewModel.loadSubjects()
@@ -74,14 +83,9 @@ fun AddEditTaskScreen(
                 priority = task.priority
                 status = task.status
                 dueDate = task.dueDate
+                dueTime = task.dueTime
                 estimatedMinutes = task.estimatedMinutes
             }
-        }
-    }
-
-    LaunchedEffect(uiState) {
-        if (uiState is AddEditTaskUiState.Success) {
-            // Already handled in first LaunchedEffect or events
         }
     }
 
@@ -142,8 +146,6 @@ fun AddEditTaskScreen(
                         .padding(Spacing.normal),
                     verticalArrangement = Arrangement.spacedBy(Spacing.normal)
                 ) {
-                    val isDeadlinePast = dueDate > 0 && dueDate < Clock.System.now().toEpochMilliseconds()
-
                     OutlinedTextField(
                         value = title,
                         onValueChange = { 
@@ -258,29 +260,47 @@ fun AddEditTaskScreen(
                         }
                     }
 
-                    OutlinedTextField(
-                        value = Instant.fromEpochMilliseconds(dueDate)
-                            .toLocalDateTime(TimeZone.currentSystemDefault())
-                            .date.toString(),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Tanggal Deadline") },
-                        isError = isDeadlinePast,
-                        supportingText = {
-                            if (isDeadlinePast) {
-                                Text(
-                                    "⚠ Deadline sudah lewat",
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.normal)
+                    ) {
+                        OutlinedTextField(
+                            value = Instant.fromEpochMilliseconds(dueDate)
+                                .toLocalDateTime(TimeZone.currentSystemDefault())
+                                .date.toString(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Tanggal Deadline") },
+                            isError = isDeadlinePast,
+                            supportingText = {
+                                if (isDeadlinePast) {
+                                    Text(
+                                        "⚠ Deadline sudah lewat",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = { showDatePicker = true }) {
+                                    Icon(Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal")
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = dueTime ?: "--:--",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Jam") },
+                            trailingIcon = {
+                                IconButton(onClick = { showTimePicker = true }) {
+                                    Icon(Icons.Default.Schedule, contentDescription = "Pilih Jam")
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
                     Text(
                         "Estimasi Waktu: $estimatedMinutes menit",
@@ -310,12 +330,13 @@ fun AddEditTaskScreen(
                                 subject = selectedSubject,
                                 priority = priority,
                                 status = status,
-                                dueDate = dueDate,
+                                dueDate = actualDeadline,
+                                dueTime = dueTime,
                                 estimatedMinutes = estimatedMinutes
                             )
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = title.isNotBlank() && !isDeadlinePast,
+                        enabled = title.isNotBlank() && (!isDeadlinePast || taskId != null),
                         shape = MaterialTheme.shapes.medium
                     ) {
                         Text(
@@ -344,5 +365,31 @@ fun AddEditTaskScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    if (showTimePicker) {
+        val initialHour = dueTime?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 12
+        val initialMinute = dueTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialHour,
+            initialMinute = initialMinute,
+            is24Hour = true
+        )
+        
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    dueTime = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Batal") }
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            }
+        )
     }
 }

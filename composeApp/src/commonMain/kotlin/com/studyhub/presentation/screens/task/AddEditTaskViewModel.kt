@@ -103,6 +103,7 @@ class AddEditTaskViewModel(
         priority: Priority,
         status: TaskStatus,
         dueDate: Long,
+        dueTime: String?,
         estimatedMinutes: Int
     ) {
         viewModelScope.launch {
@@ -126,7 +127,7 @@ class AddEditTaskViewModel(
                     priority = priority,
                     status = status,
                     dueDate = dueDate,
-                    dueTime = null,
+                    dueTime = dueTime,
                     tags = emptyList(),
                     estimatedMinutes = estimatedMinutes,
                     isDeleted = false,
