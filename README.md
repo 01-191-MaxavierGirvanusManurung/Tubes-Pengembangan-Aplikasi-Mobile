@@ -19,6 +19,11 @@
 
 ---
 
+## ⏸️ Video Demo Aplikasi
+[Demo StudyHub di YouTube](https://youtu.be/8nGvIHzfxK8?si=uZQ93_xUYaup7Is0)
+
+---
+
 ## 🛠️ Tech Stack
 
 Aplikasi ini dibangun menggunakan teknologi modern dalam ekosistem Kotlin Multiplatform (KMP):
