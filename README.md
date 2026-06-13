@@ -6,9 +6,10 @@
 
 ## 👥 Anggota Tim
 
-| Nama | NIM |
-|------|-----|
-| Maxavier Girvanus Manurung | 123140191 | Muhammad Rafiq Ridho | 123140197 |
+| Nama                       | NIM |
+|----------------------------|-----|
+| Maxavier Girvanus Manurung | 123140191 |
+| Muhammad Rafiq Ridho       | 123140197 |
 
 ---
 
@@ -30,6 +31,45 @@ Aplikasi ini dibangun menggunakan teknologi modern dalam ekosistem Kotlin Multip
 - **AI Engine**: [Groq Cloud API](https://groq.com/) (Llama-3 model)
 - **Testing**: Kotlin Test, Coroutines Test, Turbine, Kover
 - **Analysis**: Detekt
+
+---
+
+## 🏗️ Struktur Folder (Clean Architecture)
+
+Proyek ini mengikuti struktur modular berdasarkan layer Clean Architecture guna memastikan kode yang mudah diuji dan dipelihara:
+
+```text
+com.studyhub
+├── core            # Utilitas umum, konstanta, dan base classes (extension functions, date formatter)
+├── data            # Layer Data (Implementasi akses data & integrasi library)
+│   ├── local       # Database (SQLDelight), DataStore, & AI Cache logic
+│   ├── remote      # Ktor API Client (Groq, Auth) & Data Transfer Objects (DTO)
+│   ├── repository  # Implementasi konkret dari domain repository
+│   └── sync        # Logika sinkronisasi offline-first (Sync Queue & Conflict Handling)
+├── domain          # Layer Bisnis (Murni Kotlin, bebas dependensi platform/framework)
+│   ├── model       # Business models/Entities (Task, Subject, AiUsage)
+│   ├── repository  # Kontrak/Interface repository sebagai abstraksi data
+│   └── usecase     # Logika bisnis spesifik (Interactors) untuk satu aksi spesifik
+└── presentation    # Layer UI (Jetpack Compose Multiplatform & MVVM)
+    ├── components  # Reusable UI widgets (StudyHubCard, CustomTextField)
+    ├── navigation  # Routing, Bottom Nav, & Navigation Graph
+    ├── screens     # Fitur per modul (Home, Task, AI, Pomodoro, dll) dengan ViewModel
+    └── theme       # Definisi Design System (Color, Typography, Shape)
+```
+
+---
+
+## 🤖 Arsitektur AI (Smart Engine)
+
+StudyHub menggunakan pendekatan **Layered AI Processing** untuk memastikan efisiensi token, kecepatan respon yang instan (LPU), dan ketahanan terhadap kegagalan jaringan.
+
+### Alur Kerja AI Repository:
+1.  **Layer 1: Semantic Caching**: Sebelum memanggil API, sistem mengecek `AiCacheDataSource` menggunakan hash key dari data input. Jika cache masih valid (< 6 jam), data langsung diambil dari local DB tanpa memakan kuota API.
+2.  **Layer 2: Guard & Usage Limit**: Mengecek kuota harian user lokal untuk mencegah spamming API dan memastikan data input mencukupi (contoh: minimal 2 tugas untuk melakukan Smart Priority).
+3.  **Layer 3: Compressed Prompting**: Data tugas dikompresi menjadi format JSON mini (field names disingkat) sebelum dikirim ke Groq Cloud guna meminimalisir latensi jaringan dan konsumsi token.
+4.  **Layer 4: Hybrid Fallback**: Jika terjadi error (no internet/quota habis), sistem otomatis beralih ke algoritma konvensional (Rule-based sorting) agar user tetap mendapatkan pengalaman manajemen tugas yang fungsional.
+
+**Model**: `Llama-3-70b` (via Groq Cloud API) untuk penalaran semantik yang cepat dan akurat dalam menentukan prioritas belajar.
 
 ---
 
