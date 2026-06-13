@@ -151,14 +151,20 @@ class ReportViewModel(
                     val medTasks = tasks.filter { it.priority == Priority.MEDIUM }
                     val lowTasks = tasks.filter { it.priority == Priority.LOW }
 
-                    // ── Completion status ──
+                    // ── Completion status calculation for Donut Chart ──
                     val onTime = completed.count { t ->
-                        t.completedAt != null && t.completedAt <= t.dueDate
+                        t.completedAt == null || t.completedAt <= t.dueDate
                     }
-                    val late = completed.count { t ->
+                    val finishedLate = completed.count { t ->
                         t.completedAt != null && t.completedAt > t.dueDate
                     }
-                    val pending = tasks.count { it.status != TaskStatus.DONE }
+                    val overdueNotDone = tasks.count { it.status != TaskStatus.DONE && it.dueDate < now }
+                    
+                    // Total "Terlambat" includes finished late and currently overdue tasks
+                    val late = finishedLate + overdueNotDone
+                    
+                    // "Belum Selesai" only includes non-done tasks that are still within deadline
+                    val pending = tasks.count { it.status != TaskStatus.DONE && it.dueDate >= now }
 
                     // ── Streak calculation ──
                     val streak = prefs.currentStreak
