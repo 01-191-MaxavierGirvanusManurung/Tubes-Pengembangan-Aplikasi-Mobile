@@ -399,51 +399,15 @@ fun TasksScreen(
                                         key = { it.id },
                                         contentType = { "task_list_item" }
                                     ) { task ->
-                                        val dismissState = rememberSwipeToDismissBoxState(
-                                            confirmValueChange = { value ->
-                                                if (value == SwipeToDismissBoxValue.EndToStart) {
-                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    viewModel.showDeleteConfirm(task.id)
-                                                    true
-                                                } else false
-                                            }
-                                        )
-
-                                        SwipeToDismissBox(
-                                            state = dismissState,
-                                            backgroundContent = {
-                                                val color = if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                                                    MaterialTheme.colorScheme.errorContainer
-                                                } else Color.Transparent
-                                                
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .clip(MaterialTheme.shapes.medium)
-                                                        .background(color)
-                                                        .padding(end = Spacing.normal),
-                                                    contentAlignment = Alignment.CenterEnd
-                                                ) {
-                                                    if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                                                        Icon(
-                                                            Icons.Default.Delete, "Hapus",
-                                                            tint = MaterialTheme.colorScheme.onErrorContainer
-                                                        )
-                                                    }
-                                                }
+                                        TaskCard(
+                                            task = task,
+                                            onEdit = {
+                                                editingTaskId = task.id
+                                                showAddBottomSheet = true
                                             },
-                                            enableDismissFromStartToEnd = false
-                                        ) {
-                                            TaskCard(
-                                                task = task,
-                                                onEdit = {
-                                                    editingTaskId = task.id
-                                                    showAddBottomSheet = true
-                                                },
-                                                onDelete = { viewModel.showDeleteConfirm(task.id) },
-                                                onClick = { onNavigateToTaskDetail(task.id) }
-                                            )
-                                        }
+                                            onDelete = { viewModel.showDeleteConfirm(task.id) },
+                                            onClick = { onNavigateToTaskDetail(task.id) }
+                                        )
                                     }
                                 }
                             } else {

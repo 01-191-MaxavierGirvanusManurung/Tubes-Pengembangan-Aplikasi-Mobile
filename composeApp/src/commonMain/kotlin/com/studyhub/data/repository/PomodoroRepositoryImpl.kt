@@ -5,6 +5,8 @@ import com.studyhub.domain.model.PomodoroPhase
 import com.studyhub.domain.repository.PomodoroRepository
 import com.studyhub.domain.repository.PomodoroSessionSummary
 import com.studyhub.core.util.currentTimeMillis
+import com.studyhub.core.util.atStartOfDayMillis
+import com.studyhub.core.util.toLocalDate
 
 class PomodoroRepositoryImpl(
     private val dataSource: PomodoroDataSource
@@ -28,6 +30,12 @@ class PomodoroRepositoryImpl(
 
     override suspend fun getFocusMinutesInRange(start: Long, end: Long): Int {
         return dataSource.getFocusMinutesInRange(start, end)
+    }
+
+    override suspend fun getTodayFocusMinutes(): Int {
+        val now = currentTimeMillis()
+        val startOfDay = now.toLocalDate().atStartOfDayMillis()
+        return getFocusMinutesInRange(startOfDay, now)
     }
 
     override suspend fun getSessionsInRange(start: Long, end: Long): List<PomodoroSessionSummary> {

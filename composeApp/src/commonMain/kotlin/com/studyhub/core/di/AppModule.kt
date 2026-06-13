@@ -33,6 +33,7 @@ import com.studyhub.presentation.screens.progress.ProgressViewModel
 import com.studyhub.presentation.screens.report.ReportViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.koin.core.context.startKoin
@@ -125,7 +126,7 @@ val viewModelModule = module {
     viewModelOf(::NotifHistoryViewModel)
     viewModelOf(::PomodoroViewModel)
     viewModelOf(::ProgressViewModel)
-    viewModelOf(::ReportViewModel)
+    viewModel { ReportViewModel(get(), get(), get()) }
 }
 
 // ==================== SHARED MODULES ====================

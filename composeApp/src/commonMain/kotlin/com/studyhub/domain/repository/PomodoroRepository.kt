@@ -12,6 +12,7 @@ interface PomodoroRepository {
     )
     suspend fun getFocusMinutesInRange(start: Long, end: Long): Int
     suspend fun getSessionsInRange(start: Long, end: Long): List<PomodoroSessionSummary>
+    suspend fun getTodayFocusMinutes(): Int
 }
 
 data class PomodoroSessionSummary(

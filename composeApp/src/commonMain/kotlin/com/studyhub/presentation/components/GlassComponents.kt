@@ -17,10 +17,24 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.studyhub.presentation.theme.Spacing
+
+@Composable
+fun glassSurfaceColor(): Color {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    return if (isDark) Color.Black.copy(alpha = 0.25f) 
+           else Color.White.copy(alpha = 0.8f)
+}
+
+@Composable
+fun glassBorderColor(): Color {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    return if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.3f)
+}
 
 @Composable
 fun LiquidGlassCard(
@@ -29,11 +43,11 @@ fun LiquidGlassCard(
     borderAlpha: Float = 0.3f,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     // Use white/black with opacity for glass effect, but keep it clean
-    val baseColor = Color.White
-    val bgColor = if (isDark) baseColor.copy(alpha = 0.06f) else baseColor.copy(alpha = 0.12f)
-    val borderColor = if (isDark) baseColor.copy(alpha = 0.10f) else baseColor.copy(alpha = borderAlpha)
+    val baseColor = if (isDark) Color.Black else Color.White
+    val bgColor = if (isDark) baseColor.copy(alpha = 0.15f) else baseColor.copy(alpha = 0.12f)
+    val borderColor = if (isDark) Color.White.copy(alpha = 0.1f) else baseColor.copy(alpha = borderAlpha)
     
     Box(
         modifier = modifier
